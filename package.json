@@ -12,7 +12,7 @@
     "start:flask": "yarn start --build-type flask",
     "start:mmi": "yarn start --build-type mmi",
     "start:lavamoat": "yarn build:dev dev --apply-lavamoat=true",
-    "dist": "yarn build dist",
+    "dist": "yarn build dist --apply-lavamoat=false --snow=false",
     "dist:mv3": "ENABLE_MV3=true yarn build dist",
     "dist:mmi": "yarn dist --build-type mmi",
     "dist:mmi:debug": "yarn dist --build-type mmi --apply-lavamoat=false",

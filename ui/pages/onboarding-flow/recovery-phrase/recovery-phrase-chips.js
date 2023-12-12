@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import classnames from 'classnames';
 import PropTypes from 'prop-types';
@@ -43,7 +44,7 @@ export default function RecoveryPhraseChips({
           'recovery-phrase__chips--hidden': hideSeedPhrase,
         })}
       >
-        {secretRecoveryPhrase.map((word, index) => {
+        {/* {secretRecoveryPhrase.map((word, index) => {
           if (
             confirmPhase &&
             indicesToCheck &&
@@ -80,10 +81,10 @@ export default function RecoveryPhraseChips({
               </Chip>
             </div>
           );
-        })}
+        })} */}
       </div>
 
-      {hideSeedPhrase && (
+      {/* {hideSeedPhrase && (
         <div className="recovery-phrase__secret-blocker">
           {!hiddenPhrase && (
             <>
@@ -98,7 +99,7 @@ export default function RecoveryPhraseChips({
             </>
           )}
         </div>
-      )}
+      )} */}
     </Box>
   );
 }

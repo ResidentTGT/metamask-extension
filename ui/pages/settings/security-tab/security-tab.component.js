@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unused-state */
+/* eslint-disable no-unused-vars */
 import { startCase } from 'lodash';
 import PropTypes from 'prop-types';
 import React, { PureComponent } from 'react';
@@ -132,7 +134,7 @@ export default class SecurityTab extends PureComponent {
 
     return (
       <>
-        <div
+        {/* <div
           ref={this.settingsRefs[0]}
           className="settings-page__security-tab-sub-header"
         >
@@ -172,7 +174,7 @@ export default class SecurityTab extends PureComponent {
               onClose={this.hideSrpQuizModal}
             />
           )}
-        </div>
+        </div> */}
       </>
     );
   }

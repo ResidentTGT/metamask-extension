@@ -2608,95 +2608,95 @@ export function hideWarning() {
   };
 }
 
-export function exportAccount(
-  password: string,
-  address: string,
-  setPrivateKey: (key: string) => void,
-  setShowHoldToReveal: (show: boolean) => void,
-): ThunkAction<void, MetaMaskReduxState, unknown, AnyAction> {
-  return function (dispatch) {
-    dispatch(showLoadingIndication());
+// export function exportAccount(
+//   password: string,
+//   address: string,
+//   setPrivateKey: (key: string) => void,
+//   setShowHoldToReveal: (show: boolean) => void,
+// ): ThunkAction<void, MetaMaskReduxState, unknown, AnyAction> {
+//   return function (dispatch) {
+//     dispatch(showLoadingIndication());
 
-    log.debug(`background.verifyPassword`);
-    return new Promise<string>((resolve, reject) => {
-      callBackgroundMethod('verifyPassword', [password], function (err) {
-        if (err) {
-          log.error('Error in verifying password.');
-          dispatch(hideLoadingIndication());
-          dispatch(displayWarning('Incorrect Password.'));
-          reject(err);
-          return;
-        }
-        log.debug(`background.exportAccount`);
-        callBackgroundMethod<string>(
-          'exportAccount',
-          [address, password],
-          function (err2, result) {
-            dispatch(hideLoadingIndication());
+//     log.debug(`background.verifyPassword`);
+//     return new Promise<string>((resolve, reject) => {
+//       callBackgroundMethod('verifyPassword', [password], function (err) {
+//         if (err) {
+//           log.error('Error in verifying password.');
+//           dispatch(hideLoadingIndication());
+//           dispatch(displayWarning('Incorrect Password.'));
+//           reject(err);
+//           return;
+//         }
+//         log.debug(`background.exportAccount`);
+//         callBackgroundMethod<string>(
+//           'exportAccount',
+//           [address, password],
+//           function (err2, result) {
+//             dispatch(hideLoadingIndication());
 
-            if (err2) {
-              logErrorWithMessage(err2);
-              dispatch(displayWarning('Had a problem exporting the account.'));
-              reject(err2);
-              return;
-            }
+//             if (err2) {
+//               logErrorWithMessage(err2);
+//               dispatch(displayWarning('Had a problem exporting the account.'));
+//               reject(err2);
+//               return;
+//             }
 
-            setPrivateKey(result as string);
-            setShowHoldToReveal(true);
-            resolve(result as string);
-          },
-        );
-      });
-    });
-  };
-}
+//             setPrivateKey(result as string);
+//             setShowHoldToReveal(true);
+//             resolve(result as string);
+//           },
+//         );
+//       });
+//     });
+//   };
+// }
 
-export function exportAccounts(
-  password: string,
-  addresses: string[],
-): ThunkAction<Promise<string[]>, MetaMaskReduxState, unknown, AnyAction> {
-  return function (dispatch) {
-    log.debug(`background.verifyPassword`);
-    return new Promise<string[]>((resolve, reject) => {
-      callBackgroundMethod('verifyPassword', [password], function (err) {
-        if (err) {
-          log.error('Error in submitting password.');
-          reject(err);
-          return;
-        }
-        log.debug(`background.exportAccounts`);
-        const accountPromises = addresses.map(
-          (address) =>
-            new Promise<string>((resolve2, reject2) =>
-              callBackgroundMethod<string>(
-                'exportAccount',
-                [address, password],
-                function (err2, result) {
-                  if (err2) {
-                    logErrorWithMessage(err2);
-                    dispatch(
-                      displayWarning('Had a problem exporting the account.'),
-                    );
-                    reject2(err2);
-                    return;
-                  }
-                  resolve2(result as string);
-                },
-              ),
-            ),
-        );
-        resolve(Promise.all(accountPromises));
-      });
-    });
-  };
-}
+// export function exportAccounts(
+//   password: string,
+//   addresses: string[],
+// ): ThunkAction<Promise<string[]>, MetaMaskReduxState, unknown, AnyAction> {
+//   return function (dispatch) {
+//     log.debug(`background.verifyPassword`);
+//     return new Promise<string[]>((resolve, reject) => {
+//       callBackgroundMethod('verifyPassword', [password], function (err) {
+//         if (err) {
+//           log.error('Error in submitting password.');
+//           reject(err);
+//           return;
+//         }
+//         log.debug(`background.exportAccounts`);
+//         const accountPromises = addresses.map(
+//           (address) =>
+//             new Promise<string>((resolve2, reject2) =>
+//               callBackgroundMethod<string>(
+//                 'exportAccount',
+//                 [address, password],
+//                 function (err2, result) {
+//                   if (err2) {
+//                     logErrorWithMessage(err2);
+//                     dispatch(
+//                       displayWarning('Had a problem exporting the account.'),
+//                     );
+//                     reject2(err2);
+//                     return;
+//                   }
+//                   resolve2(result as string);
+//                 },
+//               ),
+//             ),
+//         );
+//         resolve(Promise.all(accountPromises));
+//       });
+//     });
+//   };
+// }
 
-export function showPrivateKey(key: string): PayloadAction<string> {
-  return {
-    type: actionConstants.SHOW_PRIVATE_KEY,
-    payload: key,
-  };
-}
+// export function showPrivateKey(key: string): PayloadAction<string> {
+//   return {
+//     type: actionConstants.SHOW_PRIVATE_KEY,
+//     payload: key,
+//   };
+// }
 
 export function setAccountLabel(
   account: string,

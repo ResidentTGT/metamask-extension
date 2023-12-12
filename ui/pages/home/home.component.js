@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { Redirect, Route } from 'react-router-dom';
@@ -536,7 +537,7 @@ export default class Home extends PureComponent {
             }
           />
         ) : null}
-        {shouldShowWeb3ShimUsageNotification ? (
+        {/* {shouldShowWeb3ShimUsageNotification ? (
           <HomeNotification
             descriptionText={t('web3ShimUsageNotification', [
               <span
@@ -560,7 +561,7 @@ export default class Home extends PureComponent {
             checkboxTooltipText={t('canToggleInSettings')}
             key="home-web3ShimUsageNotification"
           />
-        ) : null}
+        ) : null} */}
         {
           ///: BEGIN:ONLY_INCLUDE_IF(build-main,build-beta,build-flask)
           shouldShowSeedPhraseReminder ? (

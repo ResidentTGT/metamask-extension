@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import PropTypes from 'prop-types';
 import React, { useCallback, useContext, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -74,7 +75,7 @@ export const AccountDetails = ({ address }) => {
       {/* This is the Modal that says "Show private key" on top and has a few states */}
       <Modal isOpen={!showHoldToReveal} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent>
+        {/* <ModalContent>
           <ModalHeader
             onClose={onClose}
             onBack={
@@ -128,11 +129,11 @@ export const AccountDetails = ({ address }) => {
               onExportClick={() => setAttemptingExport(true)}
             />
           )}
-        </ModalContent>
+        </ModalContent> */}
       </Modal>
 
       {/* This is the Modal that says "Hold to reveal private key" */}
-      <HoldToRevealModal
+      {/* <HoldToRevealModal
         isOpen={showHoldToReveal}
         onClose={() => {
           trackEvent({
@@ -149,7 +150,7 @@ export const AccountDetails = ({ address }) => {
           setShowHoldToReveal(false);
         }}
         holdToRevealType="PrivateKey"
-      />
+      /> */}
     </>
   );
 };

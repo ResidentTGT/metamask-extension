@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
@@ -31,7 +32,7 @@ export default function PrivateKeyImportView({
 
   return (
     <>
-      <FormTextField
+      {/* <FormTextField
         id="private-key-box"
         size={TextFieldSize.Lg}
         autoFocus
@@ -51,7 +52,7 @@ export default function PrivateKeyImportView({
         importAccountFunc={_importAccountFunc}
         isPrimaryDisabled={privateKey === ''}
         onActionComplete={onActionComplete}
-      />
+      /> */}
     </>
   );
 }

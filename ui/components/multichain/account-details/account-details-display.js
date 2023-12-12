@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
@@ -71,7 +72,7 @@ export const AccountDetailsDisplay = ({
         accounts={accounts}
       />
       <QrView Qr={{ data: address }} />
-      {exportPrivateKeyFeatureEnabled ? (
+      {/* {exportPrivateKeyFeatureEnabled ? (
         <ButtonSecondary
           block
           size={ButtonSecondarySize.Lg}
@@ -90,7 +91,7 @@ export const AccountDetailsDisplay = ({
         >
           {t('showPrivateKey')}
         </ButtonSecondary>
-      ) : null}
+      ) : null} */}
     </Box>
   );
 };

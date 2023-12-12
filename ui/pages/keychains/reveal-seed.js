@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import qrCode from 'qrcode-generator';
 import React, { useContext, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -143,93 +144,93 @@ export default function RevealSeedPage() {
     );
   };
 
-  const renderRevealSeedContent = () => {
-    // default for SRP_VIEW_SRP_TEXT event because this is the first thing shown after rendering
-    trackEvent({
-      category: MetaMetricsEventCategory.Keys,
-      event: MetaMetricsEventName.SrpViewSrpText,
-      properties: {
-        key_type: MetaMetricsEventKeyType.Srp,
-      },
-    });
+  // const renderRevealSeedContent = () => {
+  //   // default for SRP_VIEW_SRP_TEXT event because this is the first thing shown after rendering
+  //   trackEvent({
+  //     category: MetaMetricsEventCategory.Keys,
+  //     event: MetaMetricsEventName.SrpViewSrpText,
+  //     properties: {
+  //       key_type: MetaMetricsEventKeyType.Srp,
+  //     },
+  //   });
 
-    return (
-      <div>
-        <Tabs
-          defaultActiveTabName={t('revealSeedWordsText')}
-          onTabClick={(tabName) => {
-            if (tabName === 'text-seed') {
-              trackEvent({
-                category: MetaMetricsEventCategory.Keys,
-                event: MetaMetricsEventName.SrpViewSrpText,
-                properties: {
-                  key_type: MetaMetricsEventKeyType.Srp,
-                },
-              });
-            } else if (tabName === 'qr-srp') {
-              trackEvent({
-                category: MetaMetricsEventCategory.Keys,
-                event: MetaMetricsEventName.SrpViewsSrpQR,
-                properties: {
-                  key_type: MetaMetricsEventKeyType.Srp,
-                },
-              });
-            }
-          }}
-        >
-          <Tab
-            name={t('revealSeedWordsText')}
-            className="reveal-seed__tab"
-            activeClassName="reveal-seed__active-tab"
-            tabKey="text-seed"
-          >
-            <Label marginTop={4}>{t('yourPrivateSeedPhrase')}</Label>
-            <ExportTextContainer
-              text={seedWords}
-              onClickCopy={() => {
-                trackEvent({
-                  category: MetaMetricsEventCategory.Keys,
-                  event: MetaMetricsEventName.KeyExportCopied,
-                  properties: {
-                    key_type: MetaMetricsEventKeyType.Srp,
-                    copy_method: 'clipboard',
-                  },
-                });
-                trackEvent({
-                  category: MetaMetricsEventCategory.Keys,
-                  event: MetaMetricsEventName.SrpCopiedToClipboard,
-                  properties: {
-                    key_type: MetaMetricsEventKeyType.Srp,
-                    copy_method: 'clipboard',
-                  },
-                });
-              }}
-            />
-          </Tab>
-          <Tab
-            name={t('revealSeedWordsQR')}
-            className="reveal-seed__tab"
-            activeClassName="reveal-seed__active-tab"
-            tabKey="qr-srp"
-          >
-            <Box
-              display={Display.Flex}
-              justifyContent={JustifyContent.center}
-              alignItems={AlignItems.center}
-              paddingTop={4}
-              data-testid="qr-srp"
-            >
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: renderQR().createTableTag(5, 15),
-                }}
-              />
-            </Box>
-          </Tab>
-        </Tabs>
-      </div>
-    );
-  };
+  //   return (
+  //     <div>
+  //       <Tabs
+  //         defaultActiveTabName={t('revealSeedWordsText')}
+  //         onTabClick={(tabName) => {
+  //           if (tabName === 'text-seed') {
+  //             trackEvent({
+  //               category: MetaMetricsEventCategory.Keys,
+  //               event: MetaMetricsEventName.SrpViewSrpText,
+  //               properties: {
+  //                 key_type: MetaMetricsEventKeyType.Srp,
+  //               },
+  //             });
+  //           } else if (tabName === 'qr-srp') {
+  //             trackEvent({
+  //               category: MetaMetricsEventCategory.Keys,
+  //               event: MetaMetricsEventName.SrpViewsSrpQR,
+  //               properties: {
+  //                 key_type: MetaMetricsEventKeyType.Srp,
+  //               },
+  //             });
+  //           }
+  //         }}
+  //       >
+  //         <Tab
+  //           name={t('revealSeedWordsText')}
+  //           className="reveal-seed__tab"
+  //           activeClassName="reveal-seed__active-tab"
+  //           tabKey="text-seed"
+  //         >
+  //           <Label marginTop={4}>{t('yourPrivateSeedPhrase')}</Label>
+  //           <ExportTextContainer
+  //             text={seedWords}
+  //             onClickCopy={() => {
+  //               trackEvent({
+  //                 category: MetaMetricsEventCategory.Keys,
+  //                 event: MetaMetricsEventName.KeyExportCopied,
+  //                 properties: {
+  //                   key_type: MetaMetricsEventKeyType.Srp,
+  //                   copy_method: 'clipboard',
+  //                 },
+  //               });
+  //               trackEvent({
+  //                 category: MetaMetricsEventCategory.Keys,
+  //                 event: MetaMetricsEventName.SrpCopiedToClipboard,
+  //                 properties: {
+  //                   key_type: MetaMetricsEventKeyType.Srp,
+  //                   copy_method: 'clipboard',
+  //                 },
+  //               });
+  //             }}
+  //           />
+  //         </Tab>
+  //         <Tab
+  //           name={t('revealSeedWordsQR')}
+  //           className="reveal-seed__tab"
+  //           activeClassName="reveal-seed__active-tab"
+  //           tabKey="qr-srp"
+  //         >
+  //           <Box
+  //             display={Display.Flex}
+  //             justifyContent={JustifyContent.center}
+  //             alignItems={AlignItems.center}
+  //             paddingTop={4}
+  //             data-testid="qr-srp"
+  //           >
+  //             <div
+  //               dangerouslySetInnerHTML={{
+  //                 __html: renderQR().createTableTag(5, 15),
+  //               }}
+  //             />
+  //           </Box>
+  //         </Tab>
+  //       </Tabs>
+  //     </div>
+  //   );
+  // };
 
   const renderPasswordPromptFooter = () => {
     return (
