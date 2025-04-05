@@ -1,7 +1,7 @@
 const {
+  defaultGanacheOptions,
   withFixtures,
   unlockWallet,
-  switchToNotificationWindow,
   WINDOW_TITLES,
 } = require('../helpers');
 const FixtureBuilder = require('../fixture-builder');
@@ -9,19 +9,10 @@ const { TEST_SNAPS_WEBSITE_URL } = require('./enums');
 
 describe('Test Snap bip-32', function () {
   it('tests various functions of bip-32', async function () {
-    const ganacheOptions = {
-      accounts: [
-        {
-          secretKey:
-            '0x7C9529A67102755B7E6102D6D950AC5D5863C98713805CEC576B945B15B71EAC',
-        },
-      ],
-    };
     await withFixtures(
       {
         fixtures: new FixtureBuilder().build(),
-        ganacheOptions,
-        failOnConsoleError: false,
+        ganacheOptions: defaultGanacheOptions,
         title: this.test.fullTitle(),
       },
       async ({ driver }) => {
@@ -29,41 +20,60 @@ describe('Test Snap bip-32', function () {
 
         // navigate to test snaps page and connect
         await driver.driver.get(TEST_SNAPS_WEBSITE_URL);
-        await driver.delay(1000);
 
-        // find and scroll to the bip32 test and connect
+        // wait for page to load
+        await driver.waitForSelector({
+          text: 'Installed Snaps',
+          tag: 'h2',
+        });
+
+        // find and scroll to the bip32 snap
         const snapButton1 = await driver.findElement('#connectbip32');
         await driver.scrollToElement(snapButton1);
-        await driver.delay(1000);
+
+        // added delay for firefox (deflake)
+        await driver.delayFirefox(3000);
+
+        // wait for and click connect to bip-32
+        await driver.waitForSelector('#connectbip32');
         await driver.clickElement('#connectbip32');
-        await driver.delay(1000);
 
         // switch to metamask extension and click connect
-        await switchToNotificationWindow(driver, 2);
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.Dialog);
+        await driver.waitForSelector({
+          text: 'Connect',
+          tag: 'button',
+        });
         await driver.clickElement({
           text: 'Connect',
           tag: 'button',
         });
 
-        await driver.waitForSelector({ text: 'Install' });
+        // wait for confirm to appear
+        await driver.waitForSelector({ text: 'Confirm' });
 
+        // click and dismiss possible scroll element
         await driver.clickElementSafe('[data-testid="snap-install-scroll"]');
 
-        await driver.clickElement({
-          text: 'Install',
-          tag: 'button',
-        });
-
-        // wait for permissions popover, click checkboxes and confirm
-        await driver.delay(500);
-        await driver.clickElement('.mm-checkbox__input');
+        // click confirm
         await driver.clickElement({
           text: 'Confirm',
           tag: 'button',
         });
 
+        // wait for permissions popover, click checkboxes and confirm
+        await driver.waitForSelector('.mm-checkbox__input');
+        await driver.clickElement('.mm-checkbox__input');
+        await driver.waitForSelector(
+          '[data-testid="snap-install-warning-modal-confirm"]',
+        );
+        await driver.clickElement(
+          '[data-testid="snap-install-warning-modal-confirm"]',
+        );
+
+        // wait for and click OK and wait for window to close
         await driver.waitForSelector({ text: 'OK' });
-        await driver.clickElement({
+        await driver.clickElementAndWaitForWindowToClose({
           text: 'OK',
           tag: 'button',
         });
@@ -78,7 +88,6 @@ describe('Test Snap bip-32', function () {
         });
 
         // scroll to and click get public key
-        await driver.delay(1000);
         await driver.waitForSelector({ text: 'Get Public Key' });
         await driver.clickElement('#bip32GetPublic');
 
@@ -102,20 +111,15 @@ describe('Test Snap bip-32', function () {
         await driver.fill('#bip32Message-secp256k1', 'foo bar');
         await driver.clickElement('#sendBip32-secp256k1');
 
-        // hit 'approve' on the signature confirmation
-        await switchToNotificationWindow(driver, 2);
-        await driver.clickElement({
+        // hit 'approve' on the signature confirmation and wait for window to close
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.Dialog);
+        await driver.clickElementAndWaitForWindowToClose({
           text: 'Approve',
           tag: 'button',
         });
 
         // switch back to the test-snaps window
-        let windowHandles = await driver.waitUntilXWindowHandles(
-          1,
-          1000,
-          10000,
-        );
-        await driver.switchToWindow(windowHandles[0]);
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.TestSnaps);
 
         // check results of the secp256k1 signature with waitForSelector
         await driver.waitForSelector({
@@ -128,19 +132,25 @@ describe('Test Snap bip-32', function () {
         await driver.scrollToElement(snapButton4);
 
         // wait then run ed25519 test
-        await driver.delay(500);
+        await driver.waitForSelector('#bip32Message-ed25519');
         await driver.fill('#bip32Message-ed25519', 'foo bar');
         await driver.clickElement('#sendBip32-ed25519');
 
-        // hit 'approve' on the custom confirm
-        await switchToNotificationWindow(driver, 2);
-        await driver.clickElement({
+        // switch to dialog window
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.Dialog);
+
+        // wait for and click 'approve' and wait for window to close
+        await driver.waitForSelector({
+          text: 'Approve',
+          tag: 'button',
+        });
+        await driver.clickElementAndWaitForWindowToClose({
           text: 'Approve',
           tag: 'button',
         });
 
-        windowHandles = await driver.waitUntilXWindowHandles(1, 1000, 10000);
-        await driver.switchToWindow(windowHandles[0]);
+        // switch back to test-snaps window
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.TestSnaps);
 
         // check results of ed25519 signature with waitForSelector
         await driver.waitForSelector({

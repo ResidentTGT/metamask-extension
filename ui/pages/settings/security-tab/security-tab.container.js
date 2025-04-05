@@ -4,32 +4,42 @@ import { compose } from 'redux';
 import {
   setIncomingTransactionsPreferences,
   setIpfsGateway,
+  setIsIpfsGatewayEnabled,
   setParticipateInMetaMetrics,
+  setDataCollectionForMarketing,
   setUseCurrencyRateCheck,
   setUseMultiAccountBalanceChecker,
   setUsePhishDetect,
   setUseTokenDetection,
+  toggleExternalServices,
   setUseAddressBarEnsResolution,
   setOpenSeaEnabled,
   setUseNftDetection,
   setUse4ByteResolution,
   setUseSafeChainsListValidation,
-  ///: BEGIN:ONLY_INCLUDE_IF(petnames)
   setUseExternalNameSources,
-  ///: END:ONLY_INCLUDE_IF
+  setUseTransactionSimulations,
+  setSecurityAlertsEnabled,
+  updateDataDeletionTaskStatus,
 } from '../../../store/actions';
-import { getAllNetworks } from '../../../selectors';
+import {
+  getIsSecurityAlertsEnabled,
+  getNetworkConfigurationsByChainId,
+  getMetaMetricsDataDeletionId,
+  getPetnamesEnabled,
+} from '../../../selectors/selectors';
+import { openBasicFunctionalityModal } from '../../../ducks/app/app';
 import SecurityTab from './security-tab.component';
 
 const mapStateToProps = (state) => {
-  const {
-    appState: { warning },
-    metamask,
-  } = state;
+  const { metamask } = state;
+
+  const petnamesEnabled = getPetnamesEnabled(state);
 
   const {
     incomingTransactionsPreferences,
     participateInMetaMetrics,
+    dataCollectionForMarketing,
     usePhishDetect,
     useTokenDetection,
     ipfsGateway,
@@ -40,18 +50,17 @@ const mapStateToProps = (state) => {
     openSeaEnabled,
     useNftDetection,
     use4ByteResolution,
-    ///: BEGIN:ONLY_INCLUDE_IF(petnames)
+    useExternalServices,
     useExternalNameSources,
-    ///: END:ONLY_INCLUDE_IF
   } = metamask;
 
-  const allNetworks = getAllNetworks(state);
+  const networkConfigurations = getNetworkConfigurationsByChainId(state);
 
   return {
-    warning,
     incomingTransactionsPreferences,
-    allNetworks,
+    networkConfigurations,
     participateInMetaMetrics,
+    dataCollectionForMarketing,
     usePhishDetect,
     useTokenDetection,
     ipfsGateway,
@@ -62,9 +71,12 @@ const mapStateToProps = (state) => {
     openSeaEnabled,
     useNftDetection,
     use4ByteResolution,
-    ///: BEGIN:ONLY_INCLUDE_IF(petnames)
     useExternalNameSources,
-    ///: END:ONLY_INCLUDE_IF
+    useExternalServices,
+    petnamesEnabled,
+    securityAlertsEnabled: getIsSecurityAlertsEnabled(state),
+    useTransactionSimulations: metamask.useTransactionSimulations,
+    metaMetricsDataDeletionId: getMetaMetricsDataDeletionId(state),
   };
 };
 
@@ -74,26 +86,39 @@ const mapDispatchToProps = (dispatch) => {
       dispatch(setIncomingTransactionsPreferences(chainId, value)),
     setParticipateInMetaMetrics: (val) =>
       dispatch(setParticipateInMetaMetrics(val)),
+    setDataCollectionForMarketing: (val) =>
+      dispatch(setDataCollectionForMarketing(val)),
     setUsePhishDetect: (val) => dispatch(setUsePhishDetect(val)),
     setUseCurrencyRateCheck: (val) => dispatch(setUseCurrencyRateCheck(val)),
     setUseTokenDetection: (val) => dispatch(setUseTokenDetection(val)),
     setIpfsGateway: (val) => dispatch(setIpfsGateway(val)),
+    setIsIpfsGatewayEnabled: (val) => dispatch(setIsIpfsGatewayEnabled(val)),
     setUseMultiAccountBalanceChecker: (val) =>
       dispatch(setUseMultiAccountBalanceChecker(val)),
     setUseAddressBarEnsResolution: (val) =>
       dispatch(setUseAddressBarEnsResolution(val)),
     setUseSafeChainsListValidation: (val) =>
       dispatch(setUseSafeChainsListValidation(val)),
+    setBasicFunctionalityModalOpen: () =>
+      dispatch(openBasicFunctionalityModal()),
     setOpenSeaEnabled: (val) => dispatch(setOpenSeaEnabled(val)),
     setUseNftDetection: (val) => dispatch(setUseNftDetection(val)),
     setUse4ByteResolution: (value) => {
       return dispatch(setUse4ByteResolution(value));
     },
-    ///: BEGIN:ONLY_INCLUDE_IF(petnames)
     setUseExternalNameSources: (value) => {
       return dispatch(setUseExternalNameSources(value));
     },
-    ///: END:ONLY_INCLUDE_IF
+    toggleExternalServices: (value) => {
+      return dispatch(toggleExternalServices(value));
+    },
+    setUseTransactionSimulations: (value) => {
+      return dispatch(setUseTransactionSimulations(value));
+    },
+    updateDataDeletionTaskStatus: () => {
+      return updateDataDeletionTaskStatus();
+    },
+    setSecurityAlertsEnabled: (value) => setSecurityAlertsEnabled(value),
   };
 };
 

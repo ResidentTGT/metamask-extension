@@ -17,6 +17,7 @@ import {
   ONBOARDING_COMPLETION_ROUTE,
   ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
   MMI_ONBOARDING_COMPLETION_ROUTE,
+  SRP_REMINDER,
   ///: END:ONLY_INCLUDE_IF
   ONBOARDING_IMPORT_WITH_SRP_ROUTE,
   ONBOARDING_PIN_EXTENSION_ROUTE,
@@ -27,11 +28,11 @@ import {
   createNewVaultAndGetSeedPhrase,
   unlockAndGetSeedPhrase,
   createNewVaultAndRestore,
-  verifySeedPhrase,
 } from '../../store/actions';
-import { getFirstTimeFlowTypeRoute } from '../../selectors';
+import { getFirstTimeFlowTypeRouteAfterUnlock } from '../../selectors';
 import { MetaMetricsContext } from '../../contexts/metametrics';
 import Button from '../../components/ui/button';
+import RevealSRPModal from '../../components/app/reveal-SRP-modal';
 import { useI18nContext } from '../../hooks/useI18nContext';
 import {
   MetaMetricsEventCategory,
@@ -42,7 +43,9 @@ import ExperimentalArea from '../../components/app/flask/experimental-area';
 ///: END:ONLY_INCLUDE_IF
 ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
 import OnboardingSuccessful from '../institutional/onboarding-successful/onboarding-successful';
+import { RemindSRP } from '../institutional/remind-srp/remind-srp';
 ///: END:ONLY_INCLUDE_IF
+import { submitRequestToBackgroundAndCatch } from '../../components/app/toast-master/utils';
 import OnboardingFlowSwitch from './onboarding-flow-switch/onboarding-flow-switch';
 import CreatePassword from './create-password/create-password';
 import ReviewRecoveryPhrase from './recovery-phrase/review-recovery-phrase';
@@ -60,31 +63,23 @@ const TWITTER_URL = 'https://twitter.com/MetaMask';
 export default function OnboardingFlow() {
   const [secretRecoveryPhrase, setSecretRecoveryPhrase] = useState('');
   const dispatch = useDispatch();
-  const { pathName, search } = useLocation();
+  const { pathname, search } = useLocation();
   const history = useHistory();
   const t = useI18nContext();
   const completedOnboarding = useSelector(getCompletedOnboarding);
-  const nextRoute = useSelector(getFirstTimeFlowTypeRoute);
+  const nextRoute = useSelector(getFirstTimeFlowTypeRouteAfterUnlock);
   const isFromReminder = new URLSearchParams(search).get('isFromReminder');
   const trackEvent = useContext(MetaMetricsContext);
+
+  useEffect(() => {
+    setOnboardingDate();
+  }, []);
 
   useEffect(() => {
     if (completedOnboarding && !isFromReminder) {
       history.push(DEFAULT_ROUTE);
     }
   }, [history, completedOnboarding, isFromReminder]);
-
-  useEffect(() => {
-    const verifyAndSetSeedPhrase = async () => {
-      if (completedOnboarding && !secretRecoveryPhrase) {
-        const verifiedSeedPhrase = await verifySeedPhrase();
-        if (verifiedSeedPhrase) {
-          setSecretRecoveryPhrase(verifiedSeedPhrase);
-        }
-      }
-    };
-    verifyAndSetSeedPhrase();
-  }, [completedOnboarding, secretRecoveryPhrase]);
 
   const handleCreateNewAccount = async (password) => {
     const newSecretRecoveryPhrase = await dispatch(
@@ -105,8 +100,19 @@ export default function OnboardingFlow() {
     return await dispatch(createNewVaultAndRestore(password, srp));
   };
 
+  const showPasswordModalToAllowSRPReveal =
+    pathname === `${ONBOARDING_REVIEW_SRP_ROUTE}/` &&
+    completedOnboarding &&
+    !secretRecoveryPhrase &&
+    isFromReminder;
+
   return (
     <div className="onboarding-flow">
+      <RevealSRPModal
+        setSecretRecoveryPhrase={setSecretRecoveryPhrase}
+        onClose={() => history.push(DEFAULT_ROUTE)}
+        isOpen={showPasswordModalToAllowSRPReveal}
+      />
       <div className="onboarding-flow__wrapper">
         <Switch>
           <Route
@@ -170,6 +176,12 @@ export default function OnboardingFlow() {
             path={MMI_ONBOARDING_COMPLETION_ROUTE}
             component={OnboardingSuccessful}
           />
+          <Route
+            path={SRP_REMINDER}
+            render={() => (
+              <RemindSRP secretRecoveryPhrase={secretRecoveryPhrase} />
+            )}
+          />
           {
             ///: END:ONLY_INCLUDE_IF
           }
@@ -203,7 +215,7 @@ export default function OnboardingFlow() {
           <Route exact path="*" component={OnboardingFlowSwitch} />
         </Switch>
       </div>
-      {pathName === ONBOARDING_COMPLETION_ROUTE && (
+      {pathname === ONBOARDING_COMPLETION_ROUTE && (
         <Button
           className="onboarding-flow__twitter-button"
           type="link"
@@ -227,4 +239,8 @@ export default function OnboardingFlow() {
       )}
     </div>
   );
+}
+
+function setOnboardingDate() {
+  submitRequestToBackgroundAndCatch('setOnboardingDate');
 }

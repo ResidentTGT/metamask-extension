@@ -6,6 +6,7 @@ import {
   CHAIN_IDS,
   CURRENCY_SYMBOLS,
 } from '../../../../shared/constants/network';
+import { mockNetworkState } from '../../../../test/stub/networks';
 import { TokenListItem } from '.';
 
 export default {
@@ -34,7 +35,7 @@ export default {
   args: {
     secondary: '$9.80 USD',
     primary: '88.0068',
-    tokenImage: './images/eth_logo.png',
+    tokenImage: './images/eth_logo.svg',
     tokenSymbol: CURRENCY_SYMBOLS.ETH,
     title: 'Ethereum',
     isOriginalTokenSymbol: true,
@@ -45,9 +46,7 @@ const customNetworkData = {
   ...testData,
   metamask: {
     ...testData.metamask,
-    providerConfig: {
-      chainId: CHAIN_IDS.MAINNET,
-    },
+    ...mockNetworkState({ chainId: CHAIN_IDS.MAINNET }),
   },
 };
 const customNetworkStore = configureStore(customNetworkData);
@@ -64,6 +63,9 @@ DefaultStory.decorators = [
     </Provider>
   ),
 ];
+DefaultStory.args = {
+  isStakeable: true,
+};
 
 export const ChaosStory = (args) => (
   <div

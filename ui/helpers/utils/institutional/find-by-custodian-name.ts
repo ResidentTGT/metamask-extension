@@ -11,25 +11,24 @@ type Custodian = {
   websocketApiUrl: string;
   isNoteToTraderSupported: boolean;
   version: number;
+  isManualTokenInputSupported?: boolean;
+  isQRCodeSupported: boolean;
 };
 
-export function findCustodianByDisplayName(
-  displayName: string,
-  custodians: Custodian[],
+export function findCustodianByEnvName(
+  envName: string,
+  custodians: Custodian[] | undefined,
 ): Custodian | null {
-  const formatedDisplayName = displayName.toLowerCase();
+  const formatedEnvName = envName.toLowerCase();
 
   if (!custodians) {
     return null;
   }
 
   for (const custodian of custodians) {
-    const custodianName = custodian.name.toLowerCase();
+    const custodianName = custodian.envName.toLowerCase();
 
-    if (
-      custodianName.length !== 0 &&
-      formatedDisplayName.includes(custodianName)
-    ) {
+    if (custodianName.length !== 0 && formatedEnvName.includes(custodianName)) {
       return custodian;
     }
   }

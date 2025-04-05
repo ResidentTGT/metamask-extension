@@ -1,170 +1,105 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { isComponent } from '@metamask/snaps-sdk';
 import { useSelector } from 'react-redux';
+import { Container } from '@metamask/snaps-sdk/jsx';
+
+import { isEqual } from 'lodash';
 import MetaMaskTemplateRenderer from '../../metamask-template-renderer/metamask-template-renderer';
-import {
-  DISPLAY,
-  FLEX_DIRECTION,
-  TypographyVariant,
-  OverflowWrap,
-  FontWeight,
-  TextVariant,
-  BorderColor,
-  TextColor,
-} from '../../../../helpers/constants/design-system';
 import { SnapDelineator } from '../snap-delineator';
-import { useI18nContext } from '../../../../hooks/useI18nContext';
-import Box from '../../../ui/box';
-import { getSnapName } from '../../../../helpers/utils/util';
-import { getTargetSubjectMetadata } from '../../../../selectors';
-import { Text } from '../../../component-library';
-import { Copyable } from '../copyable';
+import { getSnapMetadata, getMemoizedInterface } from '../../../../selectors';
+import { Box } from '../../../component-library';
 import { DelineatorType } from '../../../../helpers/constants/snaps';
 
-export const UI_MAPPING = {
-  panel: (props, elementKey) => ({
-    element: 'Box',
-    children: props.children.map((element) =>
-      // eslint-disable-next-line no-use-before-define
-      mapToTemplate(element, elementKey),
-    ),
-    props: {
-      display: DISPLAY.FLEX,
-      flexDirection: FLEX_DIRECTION.COLUMN,
-      className: 'snap-ui-renderer__panel',
-      color: TextColor.textDefault,
-    },
-  }),
-  heading: (props) => ({
-    element: 'Typography',
-    children: props.value,
-    props: {
-      variant: TypographyVariant.H4,
-      fontWeight: FontWeight.Bold,
-      overflowWrap: OverflowWrap.BreakWord,
-    },
-  }),
-  text: (props) => ({
-    element: 'SnapUIMarkdown',
-    children: props.value,
-    props: {
-      markdown: props.markdown,
-    },
-  }),
-  spinner: () => ({
-    element: 'Spinner',
-    props: {
-      className: 'snap-ui-renderer__spinner',
-    },
-  }),
-  divider: () => ({
-    element: 'Box',
-    props: {
-      className: 'snap-ui-renderer__divider',
-      backgroundColor: BorderColor.borderDefault,
-      marginTop: 2,
-      marginBottom: 2,
-    },
-  }),
-  copyable: (props) => ({
-    element: 'Copyable',
-    props: {
-      text: props.value,
-      sensitive: props.sensitive,
-    },
-  }),
-  image: (props) => ({
-    element: 'SnapUIImage',
-    props: {
-      value: props.value,
-    },
-  }),
-  row: (props, elementKey) => ({
-    element: 'ConfirmInfoRow',
-    // eslint-disable-next-line no-use-before-define
-    children: [mapToTemplate(props.value, elementKey)],
-    props: {
-      label: props.label,
-      variant: props.variant,
-      style: {
-        // We do this to cause an overhang with certain confirmation row variants
-        marginLeft: '-8px',
-        marginRight: '-8px',
-      },
-    },
-  }),
-  address: (props) => ({
-    element: 'ConfirmInfoRowAddress',
-    props: {
-      address: props.value,
-    },
-  }),
-};
-
-// TODO: Stop exporting this when we remove the mapToTemplate hack in confirmation templates.
-export const mapToTemplate = (data, elementKeyIndex) => {
-  const { type } = data;
-  elementKeyIndex.value += 1;
-  const indexKey = `snap_ui_element_${type}__${elementKeyIndex.value}`;
-  const mapped = UI_MAPPING[type](data, elementKeyIndex);
-  return { ...mapped, key: indexKey };
-};
+import { SnapInterfaceContextProvider } from '../../../../contexts/snaps';
+import PulseLoader from '../../../ui/pulse-loader';
+import {
+  AlignItems,
+  BlockSize,
+  Display,
+  JustifyContent,
+} from '../../../../helpers/constants/design-system';
+import { useI18nContext } from '../../../../hooks/useI18nContext';
+import { mapToTemplate } from './utils';
 
 // Component that maps Snaps UI JSON format to MetaMask Template Renderer format
-export const SnapUIRenderer = ({
+const SnapUIRendererComponent = ({
   snapId,
   delineatorType = DelineatorType.Content,
   isCollapsable = false,
   isCollapsed = false,
   isLoading = false,
-  data,
+  // This is a workaround while we have the prompt dialog type since we can't inject the SnapUIRenderer in the template renderer.
+  isPrompt = false,
+  inputValue,
+  onInputChange,
+  placeholder,
   onClick,
   boxProps,
+  interfaceId,
+  useDelineator = true,
+  useFooter = false,
+  onCancel,
+  contentBackgroundColor,
 }) => {
   const t = useI18nContext();
-  const targetSubjectMetadata = useSelector((state) =>
-    getTargetSubjectMetadata(state, snapId),
+
+  const { name: snapName } = useSelector((state) =>
+    getSnapMetadata(state, snapId),
   );
 
-  const snapName = getSnapName(snapId, targetSubjectMetadata);
+  const interfaceState = useSelector(
+    (state) => getMemoizedInterface(state, interfaceId),
+    // We only want to update the state if the content has changed.
+    // We do this to avoid useless re-renders.
+    (oldState, newState) => isEqual(oldState.content, newState.content),
+  );
+  const rawContent = interfaceState?.content;
+  const content =
+    rawContent?.type === 'Container' || !rawContent
+      ? rawContent
+      : Container({ children: rawContent });
 
-  if (isLoading) {
-    return (
-      <SnapDelineator
-        snapName={snapName}
-        type={delineatorType}
-        isCollapsable={isCollapsable}
-        isCollapsed={isCollapsed}
-        onClick={onClick}
-        boxProps={boxProps}
-        isLoading={isLoading}
-      />
-    );
-  }
+  const promptLegacyProps = useMemo(
+    () =>
+      isPrompt && {
+        inputValue,
+        onInputChange,
+        placeholder,
+      },
+    [inputValue, onInputChange, placeholder, isPrompt],
+  );
 
-  if (!isComponent(data)) {
+  const sections = useMemo(
+    () =>
+      content &&
+      mapToTemplate({
+        map: {},
+        element: content,
+        onCancel,
+        useFooter,
+        promptLegacyProps,
+        t,
+      }),
+    [content, onCancel, useFooter, promptLegacyProps, t],
+  );
+
+  if (isLoading || !content) {
     return (
-      <SnapDelineator
-        isCollapsable={isCollapsable}
-        isCollapsed={isCollapsed}
-        snapName={snapName}
-        type={DelineatorType.Error}
-        onClick={onClick}
-        boxProps={boxProps}
+      <Box
+        display={Display.Flex}
+        justifyContent={JustifyContent.center}
+        alignItems={AlignItems.center}
+        height={BlockSize.Full}
+        width={BlockSize.Full}
       >
-        <Text variant={TextVariant.bodySm} marginBottom={4}>
-          {t('snapsUIError', [<b key="0">{snapName}</b>])}
-        </Text>
-        <Copyable text={t('snapsInvalidUIError')} />
-      </SnapDelineator>
+        <PulseLoader />
+      </Box>
     );
   }
 
-  const elementKeyIndex = { value: 0 };
-  const sections = mapToTemplate(data, elementKeyIndex);
+  const { state: initialState, context } = interfaceState;
 
-  return (
+  return useDelineator ? (
     <SnapDelineator
       snapName={snapName}
       type={delineatorType}
@@ -172,21 +107,58 @@ export const SnapUIRenderer = ({
       isCollapsed={isCollapsed}
       onClick={onClick}
       boxProps={boxProps}
+      disablePadding
     >
       <Box className="snap-ui-renderer__content">
-        <MetaMaskTemplateRenderer sections={sections} />
+        <SnapInterfaceContextProvider
+          snapId={snapId}
+          interfaceId={interfaceId}
+          initialState={initialState}
+          context={context}
+        >
+          <MetaMaskTemplateRenderer sections={sections} />
+        </SnapInterfaceContextProvider>
       </Box>
     </SnapDelineator>
+  ) : (
+    <SnapInterfaceContextProvider
+      snapId={snapId}
+      interfaceId={interfaceId}
+      initialState={initialState}
+      context={context}
+    >
+      <Box
+        className="snap-ui-renderer__content"
+        height={BlockSize.Full}
+        backgroundColor={contentBackgroundColor}
+      >
+        <MetaMaskTemplateRenderer sections={sections} />
+      </Box>
+    </SnapInterfaceContextProvider>
   );
 };
 
-SnapUIRenderer.propTypes = {
+// SnapUIRenderer is memoized to avoid useless re-renders if one of the parents element re-renders.
+export const SnapUIRenderer = memo(
+  SnapUIRendererComponent,
+  (prevProps, nextProps) => isEqual(prevProps, nextProps),
+);
+
+SnapUIRendererComponent.propTypes = {
   snapId: PropTypes.string,
   delineatorType: PropTypes.string,
-  data: PropTypes.object,
   isCollapsable: PropTypes.bool,
   isCollapsed: PropTypes.bool,
   isLoading: PropTypes.bool,
+  isPrompt: PropTypes.bool,
+  inputValue: PropTypes.string,
+  onInputChange: PropTypes.func,
+  placeholder: PropTypes.string,
   onClick: PropTypes.func,
   boxProps: PropTypes.object,
+  interfaceId: PropTypes.string,
+  useDelineator: PropTypes.bool,
+  useFooter: PropTypes.bool,
+  onCancel: PropTypes.func,
+  contentBackgroundColor: PropTypes.string,
 };

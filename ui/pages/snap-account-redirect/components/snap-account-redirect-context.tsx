@@ -25,10 +25,11 @@ const SnapAccountRedirectContent = ({
   snapName,
   isBlockedUrl,
   message,
+  onSubmit,
 }: SnapAccountRedirectProps) => {
   const t = useI18nContext();
   const learnMoreAboutBlockedUrls =
-    'https://support.metamask.io/hc/en-us/articles/4428045875483--Deceptive-site-ahead-when-trying-to-connect-to-a-site';
+    'https://support.metamask.io/troubleshooting/deceptive-site-ahead-when-trying-to-connect-to-a-site/';
 
   return (
     <Box
@@ -89,6 +90,7 @@ const SnapAccountRedirectContent = ({
             snapName={snapName}
             url={url}
             message={message}
+            onSubmit={onSubmit}
           />
         ) : null}
       </Box>

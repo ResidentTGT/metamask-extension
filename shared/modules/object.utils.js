@@ -18,7 +18,7 @@ export const AllProperties = Symbol('*');
  * If a property is excluded, its type is included instead.
  *
  * @param {object} object - The object to mask
- * @param {Object<object | boolean>} mask - The mask to apply to the object
+ * @param {{[key: string]: object | boolean}} mask - The mask to apply to the object
  */
 export function maskObject(object, mask) {
   let maskAllProperties = false;
@@ -35,7 +35,8 @@ export function maskObject(object, mask) {
     } else if (maskKey && typeof maskKey === 'object') {
       state[key] = maskObject(object[key], maskKey);
     } else if (maskKey === undefined || maskKey === false) {
-      state[key] = typeof object[key];
+      // As typeof null (misleadingly) returns “object,” it would be more readable to display “null” instead of “object.”
+      state[key] = object[key] === null ? null : typeof object[key];
     } else {
       throw new Error(`Unsupported mask entry: ${maskKey}`);
     }

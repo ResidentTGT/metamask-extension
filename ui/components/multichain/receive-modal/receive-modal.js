@@ -2,34 +2,26 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
-  AvatarAccount,
-  AvatarAccountSize,
-  AvatarAccountVariant,
   Box,
   Modal,
+  ModalOverlay,
   ModalContent,
   ModalHeader,
-  ModalOverlay,
-  Text,
 } from '../../component-library';
-import QrView from '../../ui/qr-code';
+import QrCodeView from '../../ui/qr-code-view';
 import { useI18nContext } from '../../../hooks/useI18nContext';
-import { getMetaMaskAccountsOrdered, getUseBlockie } from '../../../selectors';
+import { getInternalAccountByAddress } from '../../../selectors';
 import {
   AlignItems,
-  BlockSize,
   Display,
   FlexDirection,
-  JustifyContent,
-  TextAlign,
-  TextVariant,
 } from '../../../helpers/constants/design-system';
 
 export const ReceiveModal = ({ address, onClose }) => {
   const t = useI18nContext();
-  const useBlockie = useSelector(getUseBlockie);
-  const accounts = useSelector(getMetaMaskAccountsOrdered);
-  const { name } = accounts.find((account) => account.address === address);
+  const {
+    metadata: { name },
+  } = useSelector((state) => getInternalAccountByAddress(state, address));
 
   return (
     <Modal isOpen onClose={onClose}>
@@ -40,33 +32,12 @@ export const ReceiveModal = ({ address, onClose }) => {
         </ModalHeader>
         <Box
           display={Display.Flex}
-          width={BlockSize.Full}
-          justifyContent={JustifyContent.center}
-        >
-          <AvatarAccount
-            variant={
-              useBlockie
-                ? AvatarAccountVariant.Blockies
-                : AvatarAccountVariant.Jazzicon
-            }
-            address={address}
-            size={AvatarAccountSize.Lg}
-          />
-        </Box>
-        <Text
-          marginTop={4}
-          variant={TextVariant.bodyLgMedium}
-          textAlign={TextAlign.Center}
-        >
-          {name}
-        </Text>
-
-        <Box
-          display={Display.Flex}
           alignItems={AlignItems.center}
           flexDirection={FlexDirection.Column}
+          paddingInlineEnd={4}
+          paddingInlineStart={4}
         >
-          <QrView Qr={{ data: address }} />
+          <QrCodeView Qr={{ data: address }} accountName={name} />
         </Box>
       </ModalContent>
     </Modal>

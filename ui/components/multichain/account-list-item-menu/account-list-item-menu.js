@@ -10,6 +10,8 @@ import {
   getCurrentChainId,
   getHardwareWalletType,
   getAccountTypeForKeyring,
+  getPinnedAccountsList,
+  getHiddenAccountsList,
   ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
   getMetaMaskAccountsOrdered,
   ///: END:ONLY_INCLUDE_IF
@@ -17,7 +19,6 @@ import {
 ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
 import { toChecksumHexAddress } from '../../../../shared/modules/hexstring-utils';
 ///: END:ONLY_INCLUDE_IF
-import { findKeyringForAddress } from '../../../ducks/metamask/metamask';
 import { MenuItem } from '../../ui/menu';
 import {
   IconName,
@@ -31,7 +32,11 @@ import {
   MetaMetricsEventCategory,
   MetaMetricsEventName,
 } from '../../../../shared/constants/metametrics';
-import { showModal } from '../../../store/actions';
+import {
+  showModal,
+  updateAccountsList,
+  updateHiddenAccountsList,
+} from '../../../store/actions';
 import { TextVariant } from '../../../helpers/constants/design-system';
 import { formatAccountType } from '../../../helpers/utils/metrics';
 import { AccountDetailsMenuItem, ViewExplorerMenuItem } from '..';
@@ -43,8 +48,10 @@ export const AccountListItemMenu = ({
   onClose,
   closeMenu,
   isRemovable,
-  identity,
+  account,
   isOpen,
+  isPinned,
+  isHidden,
 }) => {
   const t = useI18nContext();
   const trackEvent = useContext(MetaMetricsContext);
@@ -54,10 +61,11 @@ export const AccountListItemMenu = ({
 
   const deviceName = useSelector(getHardwareWalletType);
 
-  const keyring = useSelector((state) =>
-    findKeyringForAddress(state, identity.address),
-  );
+  const { keyring } = account.metadata;
   const accountType = formatAccountType(getAccountTypeForKeyring(keyring));
+
+  const pinnedAccountList = useSelector(getPinnedAccountsList);
+  const hiddenAccountList = useSelector(getHiddenAccountsList);
 
   ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
   const isCustodial = keyring?.type ? /Custody/u.test(keyring.type) : false;
@@ -121,6 +129,33 @@ export const AccountListItemMenu = ({
     };
   }, [handleClickOutside]);
 
+  const handlePinning = (address) => {
+    const updatedPinnedAccountList = [...pinnedAccountList, address];
+    dispatch(updateAccountsList(updatedPinnedAccountList));
+  };
+
+  const handleUnpinning = (address) => {
+    const updatedPinnedAccountList = pinnedAccountList.filter(
+      (item) => item !== address,
+    );
+    dispatch(updateAccountsList(updatedPinnedAccountList));
+  };
+
+  const handleHidding = (address) => {
+    const updatedHiddenAccountList = [...hiddenAccountList, address];
+    if (pinnedAccountList.includes(address)) {
+      handleUnpinning(address);
+    }
+    dispatch(updateHiddenAccountsList(updatedHiddenAccountList));
+  };
+
+  const handleUnhidding = (address) => {
+    const updatedHiddenAccountList = hiddenAccountList.filter(
+      (item) => item !== address,
+    );
+    dispatch(updateHiddenAccountsList(updatedHiddenAccountList));
+  };
+
   return (
     <Popover
       className="multichain-account-list-item-menu__popover"
@@ -132,21 +167,52 @@ export const AccountListItemMenu = ({
       isOpen={isOpen}
       isPortal
       preventOverflow
+      flip
     >
       <ModalFocus restoreFocus initialFocusRef={anchorElement}>
         <div onKeyDown={handleKeyDown} ref={popoverDialogRef}>
           <AccountDetailsMenuItem
             metricsLocation={METRICS_LOCATION}
             closeMenu={closeMenu}
-            address={identity.address}
+            address={account.address}
             textProps={{ variant: TextVariant.bodySm }}
           />
           <ViewExplorerMenuItem
             metricsLocation={METRICS_LOCATION}
             closeMenu={closeMenu}
             textProps={{ variant: TextVariant.bodySm }}
-            address={identity.address}
+            account={account}
           />
+          {isHidden ? null : (
+            <MenuItem
+              data-testid="account-list-menu-pin"
+              onClick={() => {
+                isPinned
+                  ? handleUnpinning(account.address)
+                  : handlePinning(account.address);
+                onClose();
+              }}
+              iconName={isPinned ? IconName.Unpin : IconName.Pin}
+            >
+              <Text variant={TextVariant.bodySm}>
+                {isPinned ? t('unpin') : t('pinToTop')}
+              </Text>
+            </MenuItem>
+          )}
+          <MenuItem
+            data-testid="account-list-menu-hide"
+            onClick={() => {
+              isHidden
+                ? handleUnhidding(account.address)
+                : handleHidding(account.address);
+              onClose();
+            }}
+            iconName={isHidden ? IconName.Eye : IconName.EyeSlash}
+          >
+            <Text variant={TextVariant.bodySm}>
+              {isHidden ? t('showAccount') : t('hideAccount')}
+            </Text>
+          </MenuItem>
           {isRemovable ? (
             <MenuItem
               ref={removeAccountItemRef}
@@ -155,7 +221,7 @@ export const AccountListItemMenu = ({
                 dispatch(
                   showModal({
                     name: 'CONFIRM_REMOVE_ACCOUNT',
-                    identity,
+                    account,
                   }),
                 );
                 trackEvent({
@@ -183,7 +249,7 @@ export const AccountListItemMenu = ({
                 data-testid="account-options-menu__remove-jwt"
                 onClick={async () => {
                   const token = await dispatch(
-                    mmiActions.getCustodianToken(identity.address),
+                    mmiActions.getCustodianToken(account.address),
                   );
 
                   const custodyAccountDetails = await dispatch(
@@ -199,7 +265,7 @@ export const AccountListItemMenu = ({
                       token,
                       custodyAccountDetails,
                       accounts,
-                      selectedAddress: toChecksumHexAddress(identity.address),
+                      selectedAddress: toChecksumHexAddress(account.address),
                     }),
                   );
                   onClose();
@@ -242,11 +308,30 @@ AccountListItemMenu.propTypes = {
    */
   isRemovable: PropTypes.bool.isRequired,
   /**
-   * Identity of the account
+   * Represents pinned accounts
    */
-  identity: PropTypes.shape({
-    name: PropTypes.string.isRequired,
+  isPinned: PropTypes.bool,
+  /**
+   * Represents hidden accounts
+   */
+  isHidden: PropTypes.bool,
+  /**
+   * An account object that has name, address, and balance data
+   */
+  account: PropTypes.shape({
+    id: PropTypes.string.isRequired,
     address: PropTypes.string.isRequired,
     balance: PropTypes.string.isRequired,
+    metadata: PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      snap: PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        name: PropTypes.string,
+        enabled: PropTypes.bool,
+      }),
+      keyring: PropTypes.shape({
+        type: PropTypes.string.isRequired,
+      }).isRequired,
+    }).isRequired,
   }).isRequired,
 };

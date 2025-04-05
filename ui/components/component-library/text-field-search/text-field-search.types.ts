@@ -18,8 +18,10 @@ type MakePropsOptional<T> = {
   [K in keyof T]?: T[K];
 };
 
+// TODO: Convert to a `type` in a future major version.
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export interface TextFieldSearchStyleUtilityProps
-  extends Omit<TextFieldProps<'input'>, 'type'> {
+  extends Omit<TextFieldProps<'input'>, 'type' | 'size'> {
   /**
    * The value of the TextFieldSearch
    */
@@ -54,6 +56,10 @@ export interface TextFieldSearchStyleUtilityProps
    * Attributes applied to the `input` element.
    */
   inputProps?: InputProps<'input'>;
+  /**
+   * The size of the TextFieldSearch
+   */
+  size?: TextFieldSearchSize;
 }
 
 export type TextFieldSearchProps<C extends React.ElementType> =

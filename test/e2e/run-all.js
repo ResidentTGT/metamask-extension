@@ -6,12 +6,10 @@ const { hideBin } = require('yargs/helpers');
 const { runInShell } = require('../../development/lib/run-command');
 const { exitWithError } = require('../../development/lib/exit-with-error');
 const { loadBuildTypesConfig } = require('../../development/lib/build-type');
+const { filterE2eChangedFiles } = require('./changedFilesUtil');
 
 // These tests should only be run on Flask for now.
-const FLASK_ONLY_TESTS = [
-  'petnames.spec.js',
-  'test-snap-txinsights-v2.spec.js',
-];
+const FLASK_ONLY_TESTS = [];
 
 const getTestPathsForTestDir = async (testDir) => {
   const testFilenames = await fs.promises.readdir(testDir, {
@@ -33,9 +31,47 @@ const getTestPathsForTestDir = async (testDir) => {
   return testPaths;
 };
 
+// Quality Gate Retries
+const RETRIES_FOR_NEW_OR_CHANGED_TESTS = 5;
+
+/**
+ * Runs the quality gate logic to filter and append changed or new tests if present.
+ *
+ * @param {string} fullTestList - List of test paths to be considered.
+ * @param {string[]} changedOrNewTests - List of changed or new test paths.
+ * @returns {string} The updated full test list.
+ */
+function applyQualityGate(fullTestList, changedOrNewTests) {
+  let qualityGatedList = fullTestList;
+
+  if (changedOrNewTests.length > 0) {
+    // Filter to include only the paths present in fullTestList
+    const filteredTests = changedOrNewTests.filter((test) =>
+      fullTestList.includes(test),
+    );
+
+    // If there are any filtered tests, append them to fullTestList
+    if (filteredTests.length > 0) {
+      const filteredTestsString = filteredTests.join('\n');
+      for (let i = 0; i < RETRIES_FOR_NEW_OR_CHANGED_TESTS; i++) {
+        qualityGatedList += `\n${filteredTestsString}`;
+      }
+    }
+  }
+
+  return qualityGatedList;
+}
+
 // For running E2Es in parallel in CI
 function runningOnCircleCI(testPaths) {
-  const fullTestList = testPaths.join('\n');
+  const changedOrNewTests = filterE2eChangedFiles();
+  console.log('Changed or new test list:', changedOrNewTests);
+
+  const fullTestList = applyQualityGate(
+    testPaths.join('\n'),
+    changedOrNewTests,
+  );
+
   console.log('Full test list:', fullTestList);
   fs.writeFileSync('test/test-results/fullTestList.txt', fullTestList);
 
@@ -49,7 +85,7 @@ function runningOnCircleCI(testPaths) {
   // Report if no tests found, exit gracefully
   if (result.indexOf('There were no tests found') !== -1) {
     console.log(`run-all.js info: Skipping this node because "${result}"`);
-    return [];
+    return { fullTestList: [] };
   }
 
   // If there's no text file, it means this node has no tests, so exit gracefully
@@ -57,13 +93,15 @@ function runningOnCircleCI(testPaths) {
     console.log(
       'run-all.js info: Skipping this node because there is no myTestList.txt',
     );
-    return [];
+    return { fullTestList: [] };
   }
 
   // take the space-delimited result and split into an array
-  return fs
+  const myTestList = fs
     .readFileSync('test/test-results/myTestList.txt', { encoding: 'utf8' })
     .split(' ');
+
+  return { fullTestList: myTestList, changedOrNewTests };
 }
 
 async function main() {
@@ -79,7 +117,7 @@ async function main() {
             choices: ['chrome', 'firefox'],
           })
           .option('debug', {
-            default: process.env.E2E_DEBUG === 'true',
+            default: true,
             description:
               'Run tests in debug mode, logging each driver interaction',
             type: 'boolean',
@@ -90,6 +128,10 @@ async function main() {
           })
           .option('rpc', {
             description: `run json-rpc specific e2e tests`,
+            type: 'boolean',
+          })
+          .option('multi-provider', {
+            description: `run multi injected provider e2e tests`,
             type: 'boolean',
           })
           .option('build-type', {
@@ -127,6 +169,7 @@ async function main() {
     buildType,
     updateSnapshot,
     updatePrivacySnapshot,
+    multiProvider,
   } = argv;
 
   let testPaths;
@@ -148,12 +191,24 @@ async function main() {
   } else if (rpc) {
     const testDir = path.join(__dirname, 'json-rpc');
     testPaths = await getTestPathsForTestDir(testDir);
+  } else if (multiProvider) {
+    // Copy dist/ to folder
+    fs.cp(
+      path.resolve('dist/chrome'),
+      path.resolve('dist/chrome2'),
+      { recursive: true },
+      (err) => {
+        if (err) {
+          throw err;
+        }
+      },
+    );
+
+    const testDir = path.join(__dirname, 'multi-injected-provider');
+    testPaths = await getTestPathsForTestDir(testDir);
   } else if (buildType === 'mmi') {
     const testDir = path.join(__dirname, 'tests');
-    testPaths = [
-      ...(await getTestPathsForTestDir(testDir)),
-      path.join(__dirname, 'metamask-ui.spec.js'),
-    ];
+    testPaths = [...(await getTestPathsForTestDir(testDir))];
   } else {
     const testDir = path.join(__dirname, 'tests');
     const filteredFlaskAndMainTests = featureTestsOnMain.filter((p) =>
@@ -162,7 +217,6 @@ async function main() {
     testPaths = [
       ...(await getTestPathsForTestDir(testDir)),
       ...filteredFlaskAndMainTests,
-      path.join(__dirname, 'metamask-ui.spec.js'),
     ];
   }
 
@@ -175,8 +229,8 @@ async function main() {
   if (retries) {
     args.push('--retries', retries);
   }
-  if (debug) {
-    args.push('--debug');
+  if (!debug) {
+    args.push('--debug=false');
   }
   if (updateSnapshot) {
     args.push('--update-snapshot');
@@ -191,8 +245,10 @@ async function main() {
   await fs.promises.mkdir('test/test-results/e2e', { recursive: true });
 
   let myTestList;
+  let changedOrNewTests;
   if (process.env.CIRCLECI) {
-    myTestList = runningOnCircleCI(testPaths);
+    ({ fullTestList: myTestList, changedOrNewTests = [] } =
+      runningOnCircleCI(testPaths));
   } else {
     myTestList = testPaths;
   }
@@ -204,7 +260,12 @@ async function main() {
     if (testPath !== '') {
       testPath = testPath.replace('\n', ''); // sometimes there's a newline at the end of the testPath
       console.log(`\nExecuting testPath: ${testPath}\n`);
-      await runInShell('node', [...args, testPath]);
+
+      const isTestChangedOrNew = changedOrNewTests?.includes(testPath);
+      const qualityGateArg = isTestChangedOrNew
+        ? ['--stop-after-one-failure']
+        : [];
+      await runInShell('node', [...args, ...qualityGateArg, testPath]);
     }
   }
 }

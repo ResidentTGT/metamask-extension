@@ -3,6 +3,7 @@ import qrCode from 'qrcode-generator';
 import React, { useContext, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
+import { getErrorMessage } from '../../../shared/modules/error';
 import {
   MetaMetricsEventCategory,
   MetaMetricsEventKeyType,
@@ -98,7 +99,7 @@ export default function RevealSeedPage() {
             reason: e.message, // 'incorrect_password',
           },
         });
-        setError(e.message);
+        setError(getErrorMessage(e));
       });
   };
 

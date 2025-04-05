@@ -12,7 +12,7 @@ import {
 } from '../../../helpers/constants/common';
 import { isBeta } from '../../../helpers/utils/build-types';
 import {
-  getNumberOfSettingsInSection,
+  getNumberOfSettingRoutesInTab,
   handleSettingsRefs,
 } from '../../../helpers/utils/settings-search';
 import {
@@ -29,7 +29,7 @@ import {
 
 export default class InfoTab extends PureComponent {
   state = {
-    version: global.platform?.getVersion() ?? '<unknown>',
+    version: process.env.METAMASK_VERSION,
   };
 
   static contextTypes = {
@@ -38,7 +38,7 @@ export default class InfoTab extends PureComponent {
   };
 
   settingsRefs = Array(
-    getNumberOfSettingsInSection(this.context.t, this.context.t('about')),
+    getNumberOfSettingRoutesInTab(this.context.t, this.context.t('about')),
   )
     .fill(undefined)
     .map(() => {
@@ -113,7 +113,7 @@ export default class InfoTab extends PureComponent {
         <div ref={this.settingsRefs[4]} className="info-tab__link-item">
           <Button
             type="link"
-            href="https://metamask.io/attributions.html"
+            href={`https://raw.githubusercontent.com/MetaMask/metamask-extension/v${this.state.version}/attribution.txt`}
             target="_blank"
             rel="noopener noreferrer"
             className="info-tab__link-text"

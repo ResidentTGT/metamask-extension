@@ -1,6 +1,6 @@
-import { findCustodianByDisplayName } from './find-by-custodian-name';
+import { findCustodianByEnvName } from './find-by-custodian-name';
 
-describe('findCustodianByDisplayName', () => {
+describe('findCustodianByEnvName', () => {
   const custodians = [
     {
       type: 'JSONRPC',
@@ -14,6 +14,7 @@ describe('findCustodianByDisplayName', () => {
       refreshTokenUrl: null,
       websocketApiUrl: 'wss://websocket.dev.metamask-institutional.io/v1/ws',
       isNoteToTraderSupported: true,
+      isQRCodeSupported: false,
       version: 2,
     },
     {
@@ -30,24 +31,25 @@ describe('findCustodianByDisplayName', () => {
         'https://saturn-custody.dev.metamask-institutional.io/oauth/token',
       websocketApiUrl: 'wss://websocket.dev.metamask-institutional.io/v1/ws',
       isNoteToTraderSupported: true,
+      isQRCodeSupported: false,
       version: 2,
     },
   ];
-  it('should return the custodian if the display name is found in custodianKey', () => {
-    const displayName = 'Qredo';
-    const custodian = findCustodianByDisplayName(displayName, custodians);
-    expect(custodian?.name).toBe('Qredo');
+  it('should return the custodian if the env name is found in custodianKey', () => {
+    const envName = 'Qredo';
+    const custodian = findCustodianByEnvName(envName, custodians);
+    expect(custodian?.envName).toBe('qredo');
   });
 
-  it('should return the custodian if the display name is found in custodianDisplayName', () => {
-    const displayName = 'Saturn Custody';
-    const custodian = findCustodianByDisplayName(displayName, custodians);
-    expect(custodian?.name).toContain('Saturn');
+  it('should return the custodian if the env name is found in custodianDisplayName', () => {
+    const envName = 'Saturn Custody';
+    const custodian = findCustodianByEnvName(envName, custodians);
+    expect(custodian?.envName).toContain('saturn');
   });
 
   it('should return null if no matching custodian is found', () => {
-    const displayName = 'Non-existent Custodian';
-    const custodian = findCustodianByDisplayName(displayName, custodians);
+    const envName = 'Non-existent Custodian';
+    const custodian = findCustodianByEnvName(envName, custodians);
     expect(custodian).toBeNull();
   });
 });

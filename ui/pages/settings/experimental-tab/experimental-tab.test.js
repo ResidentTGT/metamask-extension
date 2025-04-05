@@ -26,88 +26,103 @@ describe('ExperimentalTab', () => {
     }).not.toThrow();
   });
 
-  describe('with desktop enabled', () => {
-    it('renders ExperimentalTab component without error', () => {
-      const { container } = render({ desktopEnabled: true });
-      expect(container).toMatchSnapshot();
-    });
-  });
-
-  it('should render multiple toggle options', () => {
-    const { getAllByRole } = render({ desktopEnabled: true });
+  it('renders multiple toggle options', () => {
+    const { getAllByRole } = render();
     const toggle = getAllByRole('checkbox');
 
-    expect(toggle).toHaveLength(4);
+    expect(toggle).toHaveLength(9);
   });
 
-  it('should disable opensea when blockaid is enabled', () => {
-    const setSecurityAlertsEnabled = jest.fn();
-    const setTransactionSecurityCheckEnabled = jest.fn();
-    const { getAllByRole } = render(
-      { desktopEnabled: true },
-      {
-        securityAlertsEnabled: false,
-        transactionSecurityCheckEnabled: true,
-        setSecurityAlertsEnabled,
-        setTransactionSecurityCheckEnabled,
-      },
-    );
-    const toggle = getAllByRole('checkbox');
-    fireEvent.click(toggle[0]);
-    expect(setSecurityAlertsEnabled).toHaveBeenCalledWith(true);
-    expect(setTransactionSecurityCheckEnabled).toHaveBeenCalledWith(false);
-  });
-
-  it('should show terms of use links', () => {
-    const setSecurityAlertsEnabled = jest.fn();
-    const setTransactionSecurityCheckEnabled = jest.fn();
-    const { getAllByRole } = render(
-      { desktopEnabled: true },
-      {
-        securityAlertsEnabled: false,
-        transactionSecurityCheckEnabled: true,
-        setSecurityAlertsEnabled,
-        setTransactionSecurityCheckEnabled,
-      },
-    );
-    expect(getAllByRole('link', { name: 'Terms of use' })[0]).toHaveAttribute(
-      'href',
-      'https://opensea.io/securityproviderterms',
-    );
-  });
-
-  it('should disable blockaid when opensea is enabled', () => {
-    const setSecurityAlertsEnabled = jest.fn();
-    const setTransactionSecurityCheckEnabled = jest.fn();
-    const { getAllByRole } = render(
-      { desktopEnabled: true },
-      {
-        transactionSecurityCheckEnabled: false,
-        securityAlertsEnabled: true,
-        setSecurityAlertsEnabled,
-        setTransactionSecurityCheckEnabled,
-      },
-    );
-    const toggle = getAllByRole('checkbox');
-    fireEvent.click(toggle[1]);
-    expect(setTransactionSecurityCheckEnabled).toHaveBeenCalledWith(true);
-    expect(setSecurityAlertsEnabled).toHaveBeenCalledWith(false);
-  });
-
-  it('should enable add account snap', async () => {
+  it('enables add account snap', async () => {
     const setAddSnapAccountEnabled = jest.fn();
+    const setPetnamesEnabled = jest.fn();
     const { getByTestId } = render(
-      { desktopEnabled: true },
+      {},
       {
         setAddSnapAccountEnabled,
+        petnamesEnabled: true,
+        setPetnamesEnabled,
       },
     );
 
-    const toggle = getByTestId('add-snap-account-toggle');
+    const toggle = getByTestId('add-account-snap-toggle-button');
     fireEvent.click(toggle);
 
     await waitFor(() => {
       expect(setAddSnapAccountEnabled).toHaveBeenCalledWith(true);
+    });
+  });
+
+  it('disables petnames', async () => {
+    const setAddSnapAccountEnabled = jest.fn();
+    const setPetnamesEnabled = jest.fn();
+    const { getByTestId } = render(
+      {},
+      {
+        setAddSnapAccountEnabled,
+        petnamesEnabled: true,
+        setPetnamesEnabled,
+      },
+    );
+
+    const toggle = getByTestId('toggle-petnames');
+    fireEvent.click(toggle);
+
+    await waitFor(() => {
+      expect(setPetnamesEnabled).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it('enables redesigned confirmations', async () => {
+    const setRedesignedConfirmationsEnabled = jest.fn();
+    const { getByTestId } = render(
+      {},
+      {
+        setRedesignedConfirmationsEnabled,
+        redesignedConfirmationsEnabled: false,
+      },
+    );
+
+    const toggle = getByTestId('toggle-redesigned-confirmations');
+    fireEvent.click(toggle);
+
+    await waitFor(() => {
+      expect(setRedesignedConfirmationsEnabled).toHaveBeenCalledWith(true);
+    });
+  });
+
+  it('enables the experimental bitcoin account feature', async () => {
+    const setBitcoinSupportEnabled = jest.fn();
+    const { getByTestId } = render(
+      {},
+      {
+        setBitcoinSupportEnabled,
+        bitcoinSupportEnabled: false,
+      },
+    );
+    const toggle = getByTestId('bitcoin-support-toggle');
+
+    // Should turn the BTC experimental toggle ON
+    fireEvent.click(toggle);
+    await waitFor(() => {
+      expect(setBitcoinSupportEnabled).toHaveBeenNthCalledWith(1, true);
+    });
+  });
+
+  it('enables the experimental solana account feature', async () => {
+    const setSolanaSupportEnabled = jest.fn();
+    const { getByTestId } = render(
+      {},
+      {
+        setSolanaSupportEnabled,
+        solanaSupportEnabled: false,
+      },
+    );
+    const toggle = getByTestId('solana-support-toggle');
+
+    fireEvent.click(toggle);
+    await waitFor(() => {
+      expect(setSolanaSupportEnabled).toHaveBeenNthCalledWith(1, true);
     });
   });
 });

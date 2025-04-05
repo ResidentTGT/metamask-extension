@@ -1,7 +1,7 @@
 const {
+  defaultGanacheOptions,
   withFixtures,
   WINDOW_TITLES,
-  switchToNotificationWindow,
   unlockWallet,
 } = require('../helpers');
 const FixtureBuilder = require('../fixture-builder');
@@ -9,53 +9,60 @@ const { TEST_SNAPS_WEBSITE_URL } = require('./enums');
 
 describe('Test Snap revoke permission', function () {
   it('can revoke a permission', async function () {
-    const ganacheOptions = {
-      accounts: [
-        {
-          secretKey:
-            '0x7C9529A67102755B7E6102D6D950AC5D5863C98713805CEC576B945B15B71EAC',
-          balance: 25000000000000000000,
-        },
-      ],
-    };
     await withFixtures(
       {
         fixtures: new FixtureBuilder().build(),
-        ganacheOptions,
-        failOnConsoleError: false,
+        ganacheOptions: defaultGanacheOptions,
         title: this.test.fullTitle(),
       },
       async ({ driver }) => {
         await unlockWallet(driver);
 
-        // navigate to test snaps page and connect
+        // navigate to test snaps page and connect to ethereum-provider snap
         await driver.openNewPage(TEST_SNAPS_WEBSITE_URL);
-        await driver.delay(1000);
+
+        // wait for page to load
+        await driver.waitForSelector({
+          text: 'Installed Snaps',
+          tag: 'h2',
+        });
+
+        // scroll to ethereum-provider snap
         const snapButton = await driver.findElement(
           '#connectethereum-provider',
         );
         await driver.scrollToElement(snapButton);
-        await driver.delay(1000);
-        await driver.clickElement('#connectethereum-provider');
-        await driver.delay(1000);
 
-        // switch to metamask extension and click connect
-        await switchToNotificationWindow(driver, 3);
+        // added delay for firefox (deflake)
+        await driver.delayFirefox(1000);
+
+        // wait for and click connect
+        await driver.waitForSelector('#connectethereum-provider');
+        await driver.clickElement('#connectethereum-provider');
+
+        // switch to metamask extension
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.Dialog);
+
+        // wait for and click connect
+        await driver.waitForSelector({
+          text: 'Connect',
+          tag: 'button',
+        });
         await driver.clickElement({
           text: 'Connect',
           tag: 'button',
         });
 
-        await driver.waitForSelector({ text: 'Install' });
-
+        // wait for and click connect
+        await driver.waitForSelector({ text: 'Confirm' });
         await driver.clickElement({
-          text: 'Install',
+          text: 'Confirm',
           tag: 'button',
         });
 
+        // wait for and click ok and wait for window to close
         await driver.waitForSelector({ text: 'OK' });
-
-        await driver.clickElement({
+        await driver.clickElementAndWaitForWindowToClose({
           text: 'OK',
           tag: 'button',
         });
@@ -74,18 +81,37 @@ describe('Test Snap revoke permission', function () {
           '#sendEthproviderAccounts',
         );
         await driver.scrollToElement(snapButton3);
-        await driver.delay(500);
+
+        // added delay for firefox (deflake)
+        await driver.delayFirefox(1000);
+
+        // wait for and click send
+        await driver.waitForSelector('#sendEthproviderAccounts');
         await driver.clickElement('#sendEthproviderAccounts');
 
-        // switch to metamask window and click through confirmations
-        await switchToNotificationWindow(driver, 3);
+        // switch to metamask window
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.Dialog);
+
+        // wait for and click next
+        await driver.waitForSelector({
+          text: 'Next',
+          tag: 'button',
+        });
         await driver.clickElement({
           text: 'Next',
           tag: 'button',
         });
+
+        // delay added for rendering time (deflake)
         await driver.delay(500);
-        await driver.clickElement({
-          text: 'Connect',
+
+        // wait for and click confirm and wait for window to close
+        await driver.waitForSelector({
+          text: 'Confirm',
+          tag: 'button',
+        });
+        await driver.clickElementAndWaitForWindowToClose({
+          text: 'Confirm',
           tag: 'button',
         });
 
@@ -102,6 +128,8 @@ describe('Test Snap revoke permission', function () {
         await driver.switchToWindowWithTitle(
           WINDOW_TITLES.ExtensionInFullScreenView,
         );
+
+        // added delay for rendering (deflake)
         await driver.delay(1000);
 
         // click on the global action menu
@@ -138,19 +166,40 @@ describe('Test Snap revoke permission', function () {
           '#sendEthproviderAccounts',
         );
         await driver.scrollToElement(snapButton4);
-        await driver.delay(500);
+
+        // added delay for firefox (deflake)
+        await driver.delayFirefox(1000);
+
+        // wait for and click connect
+        await driver.waitForSelector('#sendEthproviderAccounts');
         await driver.clickElement('#sendEthproviderAccounts');
 
-        // switch to metamask window and click through confirmations
+        // delay added for rendering time (deflake)
         await driver.delay(500);
-        await switchToNotificationWindow(driver, 3);
+
+        // switch to metamask dialog
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.Dialog);
+
+        // wait for and click next
+        await driver.waitForSelector({
+          text: 'Next',
+          tag: 'button',
+        });
         await driver.clickElement({
           text: 'Next',
           tag: 'button',
         });
+
+        // delay added for rendering time (deflake)
         await driver.delay(500);
-        await driver.clickElement({
-          text: 'Connect',
+
+        // wait for and click confirm and wait for window to close
+        await driver.waitForSelector({
+          text: 'Confirm',
+          tag: 'button',
+        });
+        await driver.clickElementAndWaitForWindowToClose({
+          text: 'Confirm',
           tag: 'button',
         });
 

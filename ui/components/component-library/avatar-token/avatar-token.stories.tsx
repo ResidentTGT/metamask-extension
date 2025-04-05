@@ -56,7 +56,7 @@ export default {
   },
   args: {
     name: 'eth',
-    src: './images/eth_logo.png',
+    src: './images/eth_logo.svg',
     size: AvatarTokenSize.Md,
     showHalo: false,
   },
@@ -121,7 +121,7 @@ export const SizeStory: StoryFn<typeof AvatarToken> = (args) => (
       <BadgeWrapper
         badge={
           <AvatarNetwork
-            src="./images/eth_logo.png"
+            src="./images/eth_logo.svg"
             name="ETH"
             size={AvatarNetworkSize.Xs}
             borderColor={BorderColor.backgroundDefault}
@@ -134,7 +134,7 @@ export const SizeStory: StoryFn<typeof AvatarToken> = (args) => (
       <BadgeWrapper
         badge={
           <AvatarNetwork
-            src="./images/eth_logo.png"
+            src="./images/eth_logo.svg"
             name="ETH"
             size={AvatarNetworkSize.Xs}
             borderColor={BorderColor.backgroundDefault}
@@ -147,7 +147,7 @@ export const SizeStory: StoryFn<typeof AvatarToken> = (args) => (
       <BadgeWrapper
         badge={
           <AvatarNetwork
-            src="./images/eth_logo.png"
+            src="./images/eth_logo.svg"
             name="ETH"
             size={AvatarNetworkSize.Xs}
             borderColor={BorderColor.backgroundDefault}
@@ -160,7 +160,7 @@ export const SizeStory: StoryFn<typeof AvatarToken> = (args) => (
       <BadgeWrapper
         badge={
           <AvatarNetwork
-            src="./images/eth_logo.png"
+            src="./images/eth_logo.svg"
             name="ETH"
             size={AvatarNetworkSize.Xs}
             borderColor={BorderColor.backgroundDefault}
@@ -173,7 +173,7 @@ export const SizeStory: StoryFn<typeof AvatarToken> = (args) => (
       <BadgeWrapper
         badge={
           <AvatarNetwork
-            src="./images/eth_logo.png"
+            src="./images/eth_logo.svg"
             name="ETH"
             size={AvatarNetworkSize.Sm}
             borderColor={BorderColor.backgroundDefault}
@@ -292,20 +292,20 @@ Name.args = {
 
 export const Src: StoryFn<typeof AvatarToken> = (args) => (
   <Box display={Display.Flex} gap={1}>
-    <AvatarToken {...args} src="./images/eth_logo.png" />
+    <AvatarToken {...args} src="./images/eth_logo.svg" />
     <AvatarToken {...args} src="./images/arbitrum.svg" />
     <AvatarToken {...args} src="./images/bnb.png" />
     <AvatarToken
       {...args}
-      src="https://static.metaswap.codefi.network/api/v1/tokenIcons/1/0x6b175474e89094c44da98b954eedeac495271d0f.png"
+      src="https://static.cx.metamask.io/api/v1/tokenIcons/1/0x6b175474e89094c44da98b954eedeac495271d0f.png"
     />
     <AvatarToken
       {...args}
-      src="https://static.metaswap.codefi.network/api/v1/tokenIcons/1/0x0d8775f648430679a709e98d2b0cb6250d2887ef.png"
+      src="https://static.cx.metamask.io/api/v1/tokenIcons/1/0x0d8775f648430679a709e98d2b0cb6250d2887ef.png"
     />
     <AvatarToken
       {...args}
-      src="https://static.metaswap.codefi.network/api/v1/tokenIcons/1/0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0.png"
+      src="https://static.cx.metamask.io/api/v1/tokenIcons/1/0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0.png"
     />
     <AvatarToken
       {...args}

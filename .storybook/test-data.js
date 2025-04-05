@@ -1,9 +1,16 @@
 import { draftTransactionInitialState } from '../ui/ducks/send';
 import { KeyringType } from '../shared/constants/keyring';
-import { NetworkType } from '@metamask/controller-utils';
 import { NetworkStatus } from '@metamask/network-controller';
-import { EthAccountType, EthMethod } from '@metamask/keyring-api';
-import { CHAIN_IDS } from '../shared/constants/network';
+import { EthAccountType } from '@metamask/keyring-api';
+import {
+  CHAIN_IDS,
+  LINEA_MAINNET_DISPLAY_NAME,
+} from '../shared/constants/network';
+import { copyable, divider, heading, panel, text } from '@metamask/snaps-sdk';
+import { getJsxElementFromComponent } from '@metamask/snaps-utils';
+import { FirstTimeFlowType } from '../shared/constants/onboarding';
+import { ETH_EOA_METHODS } from '../shared/constants/eth-methods';
+import { mockNetworkState } from '../test/stub/networks';
 
 const state = {
   invalidCustomNetwork: {
@@ -25,12 +32,11 @@ const state = {
       22: {
         id: 22,
         date: null,
-        image: {
-          src: 'images/global-menu-block-explorer.svg',
-        },
       },
     },
     orderedNetworkList: [],
+    pinnedAccountList: [],
+    hiddenAccountList: [],
     tokenList: {
       '0x514910771af9ca656af840dff83e8264ecf986ca': {
         address: '0x514910771af9ca656af840dff83e8264ecf986ca',
@@ -113,7 +119,7 @@ const state = {
         address: '0x6b175474e89094c44da98b954eedeac495271d0f',
         symbol: 'ETH',
         decimals: 18,
-        image: './images/eth_logo.png',
+        image: './images/eth_logo.svg',
         unlisted: false,
       },
       '0xB8c77482e45F1F44dE1745F52C74426C631bDD52': {
@@ -176,15 +182,6 @@ const state = {
     networkDetails: {
       EIPS: {
         1559: true,
-      },
-    },
-    selectedNetworkClientId: NetworkType.mainnet,
-    networksMetadata: {
-      [NetworkType.mainnet]: {
-        EIPS: {
-          1559: true,
-        },
-        status: NetworkStatus.Available,
       },
     },
     gasFeeEstimates: '0x5208',
@@ -278,6 +275,21 @@ const state = {
         ],
       },
     },
+    interfaces: {
+      'test-interface': {
+        content: getJsxElementFromComponent(
+          panel([
+            heading('Foo bar'),
+            text('Description'),
+            divider(),
+            text('More text'),
+            copyable('Text you can copy'),
+          ]),
+        ),
+        state: {},
+        snapId: 'local:http://localhost:8080/',
+      },
+    },
     accountArray: [
       {
         name: 'This is a Really Long Account Name',
@@ -309,7 +321,7 @@ const state = {
             },
           },
           options: {},
-          methods: [...Object.values(EthMethod)],
+          methods: ETH_EOA_METHODS,
           type: EthAccountType.Eoa,
         },
         '07c2cfec-36c9-46c4-8115-3836d3ac9047': {
@@ -322,7 +334,7 @@ const state = {
             },
           },
           options: {},
-          methods: [...Object.values(EthMethod)],
+          methods: ETH_EOA_METHODS,
           type: EthAccountType.Eoa,
         },
         '15e69915-2a1a-4019-93b3-916e11fd432f': {
@@ -335,7 +347,7 @@ const state = {
             },
           },
           options: {},
-          methods: [...Object.values(EthMethod)],
+          methods: ETH_EOA_METHODS,
           type: EthAccountType.Eoa,
         },
         '784225f4-d30b-4e77-a900-c8bbce735b88': {
@@ -348,7 +360,20 @@ const state = {
             },
           },
           options: {},
-          methods: [...Object.values(EthMethod)],
+          methods: ETH_EOA_METHODS,
+          type: EthAccountType.Eoa,
+        },
+        'b990b846-b384-4508-93d9-587461f1123e': {
+          address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+          id: 'b990b846-b384-4508-93d9-587461f1123e',
+          metadata: {
+            name: 'Test Account 1',
+            keyring: {
+              type: 'Test Keyring',
+            },
+          },
+          options: {},
+          methods: ETH_EOA_METHODS,
           type: EthAccountType.Eoa,
         },
       },
@@ -439,8 +464,28 @@ const state = {
         isEns: true,
       },
     ],
-    contractExchangeRates: {
-      '0xaD6D458402F60fD3Bd25163575031ACDce07538D': 0,
+    marketData: {
+      '0xaa36a7': {
+        '0xaD6D458402F60fD3Bd25163575031ACDce07538D': {
+          price: 0,
+          contractPercentChange1d: 0.004,
+          priceChange1d: 0.00004,
+        },
+      },
+      '0x1': {
+        '0xaD6D458402F60fD3Bd25163575031ACDce07538D': {
+          price: 0,
+          contractPercentChange1d: 0.004,
+          priceChange1d: 0.00004,
+        },
+      },
+      '0x5': {
+        '0xaD6D458402F60fD3Bd25163575031ACDce07538D': {
+          price: 0,
+          contractPercentChange1d: 0.004,
+          priceChange1d: 0.00004,
+        },
+      },
     },
     tokens: [
       {
@@ -455,7 +500,7 @@ const state = {
       },
     ],
     allDetectedTokens: {
-      '0x5': {
+      '0xaa36a7': {
         '0x9d0ba4ddac06032527b140912ec808ab9451b788': [
           {
             address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
@@ -631,7 +676,12 @@ const state = {
     welcomeScreenSeen: false,
     currentLocale: 'en',
     preferences: {
-      useNativeCurrencyAsPrimaryCurrency: true,
+      showNativeTokenAsMainBalance: true,
+      tokenSortConfig: {
+        key: 'token-sort-key',
+        order: 'dsc',
+        sortCallback: 'stringNumeric',
+      },
     },
     incomingTransactionsPreferences: {
       [CHAIN_IDS.MAINNET]: true,
@@ -639,7 +689,7 @@ const state = {
       [CHAIN_IDS.OPTIMISM_TESTNET]: false,
       [CHAIN_IDS.AVALANCHE_TESTNET]: true,
     },
-    firstTimeFlowType: 'create',
+    firstTimeFlowType: FirstTimeFlowType.create,
     completedOnboarding: true,
     knownMethodData: {
       '0x60806040': {
@@ -654,13 +704,6 @@ const state = {
     connectedStatusPopoverHasBeenShown: true,
     swapsWelcomeMessageHasBeenShown: true,
     defaultHomeActiveTabName: 'Tokens',
-    providerConfig: {
-      type: 'goerli',
-      ticker: 'ETH',
-      nickname: '',
-      rpcUrl: '',
-      chainId: '0x5',
-    },
     network: '5',
     accounts: {
       '0x64a845a5b02460acf8a3d84503b0d68d028b4bb4': {
@@ -677,6 +720,13 @@ const state = {
       },
     },
     accountsByChainId: {
+      '0x1': {
+        '0x64a845a5b02460acf8a3d84503b0d68d028b4bb4': { balance: '0x0' },
+        '0xb19ac54efa18cc3a14a5b821bfec73d284bf0c5e': {
+          balance: '0xcaf5317161f400',
+        },
+        '0x9d0ba4ddac06032527b140912ec808ab9451b788': { balance: '0x0' },
+      },
       '0x5': {
         '0x64a845a5b02460acf8a3d84503b0d68d028b4bb4': {
           address: '0x64a845a5b02460acf8a3d84503b0d68d028b4bb4',
@@ -694,7 +744,7 @@ const state = {
     },
     currentBlockGasLimit: '0x793af4',
     currentBlockGasLimitByChainId: {
-      '0x5': '0x793af4'
+      '0x5': '0x793af4',
     },
     transactions: [
       {
@@ -1146,25 +1196,6 @@ const state = {
         v: '0x93',
       },
     ],
-    cachedBalances: {
-      1: {
-        '0x64a845a5b02460acf8a3d84503b0d68d028b4bb4': '0x0',
-        '0xb19ac54efa18cc3a14a5b821bfec73d284bf0c5e': '0xcaf5317161f400',
-        '0x9d0ba4ddac06032527b140912ec808ab9451b788': '0x0',
-      },
-      3: {
-        '0x64a845a5b02460acf8a3d84503b0d68d028b4bb4': '0x18d289d450bace66',
-        '0xb19ac54efa18cc3a14a5b821bfec73d284bf0c5e': '0x2d3142f5000',
-        '0x9d0ba4ddac06032527b140912ec808ab9451b788': '0x15f6f0b9d4f8d000',
-      },
-      5: {
-        '0x64a845a5b02460acf8a3d84503b0d68d028b4bb4': '0x176e5b6f173ebe66',
-        '0xb19ac54efa18cc3a14a5b821bfec73d284bf0c5e': '0x2d3142f5000',
-        '0x9d0ba4ddac06032527b140912ec808ab9451b788': '0x15f6f0b9d4f8d000',
-      },
-    },
-    unapprovedMsgs: {},
-    unapprovedMsgCount: 0,
     unapprovedPersonalMsgs: {},
     unapprovedPersonalMsgCount: 0,
     unapprovedDecryptMsgs: {},
@@ -1195,21 +1226,37 @@ const state = {
         accounts: ['0x9d0ba4ddac06032527b140912ec808ab9451b788'],
       },
     ],
-    networkConfigurations: {
-      'test-networkConfigurationId-1': {
+    ...mockNetworkState(
+      {
+        id: 'test-networkConfigurationId-1',
         rpcUrl: 'https://testrpc.com',
         chainId: '0x1',
         nickname: 'mainnet',
-        rpcPrefs: { blockExplorerUrl: 'https://etherscan.io' },
+        name: 'mainnet',
+        blockExplorerUrl: 'https://etherscan.io',
+        metadata: {
+          EIPS: { 1559: true },
+          status: NetworkStatus.Available,
+        },
       },
-      'test-networkConfigurationId-2': {
+      {
+        id: 'test-networkConfigurationId-2',
+        rpcUrl: 'https://testrpc2.com',
+        chainId: '0xe708',
+        nickname: LINEA_MAINNET_DISPLAY_NAME,
+        name: LINEA_MAINNET_DISPLAY_NAME,
+        blockExplorerUrl: 'https://lineascan.build',
+        metadata: { EIPS: { 1559: true }, status: NetworkStatus.Available },
+      },
+      {
+        id: 'test-networkConfigurationId-3',
         rpcUrl: 'http://localhost:8545',
         chainId: '0x539',
+        name: 'test network',
         ticker: 'ETH',
         nickname: 'Localhost 8545',
-        rpcPrefs: {},
       },
-    },
+    ),
     accountTokens: {
       '0x64a845a5b02460acf8a3d84503b0d68d028b4bb4': {
         '0x1': [
@@ -1253,15 +1300,16 @@ const state = {
     ipfsGateway: 'dweb.link',
     migratedPrivacyMode: false,
     selectedAddress: '0x9d0ba4ddac06032527b140912ec808ab9451b788',
+    selectedNetworkClientId: 'test-networkConfigurationId-1',
     metaMetricsId:
       '0xc2377d11fec1c3b7dd88c4854240ee5e3ed0d9f63b00456d98d80320337b827f',
     currentCurrency: 'usd',
     currencyRates: {
-      "ETH": {
+      ETH: {
         conversionDate: 1620710825.03,
         conversionRate: 3910.28,
         usdConversionRate: 3910.28,
-      }
+      },
     },
     ticker: 'ETH',
     alertEnabledness: {
@@ -1443,7 +1491,19 @@ const state = {
       },
     },
     ensResolutionsByAddress: {},
-    pendingApprovals: {},
+    pendingApprovals: {
+      '741bad30-45b6-11ef-b6ec-870d18dd6c01': {
+        id: '741bad30-45b6-11ef-b6ec-870d18dd6c01',
+        origin: 'http://127.0.0.1:8080',
+        type: 'transaction',
+        time: 1721383540624,
+        requestData: {
+          txId: '741bad30-45b6-11ef-b6ec-870d18dd6c01',
+        },
+        requestState: null,
+        expectsResult: true,
+      },
+    },
     pendingApprovalCount: 0,
     subjectMetadata: {
       'http://localhost:8080': {
@@ -1536,6 +1596,7 @@ const state = {
         },
       },
     },
+    openSeaEnabled: true,
   },
   appState: {
     shouldClose: false,

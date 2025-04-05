@@ -1,68 +1,72 @@
-const { withFixtures, unlockWallet, WINDOW_TITLES } = require('../helpers');
+const {
+  defaultGanacheOptions,
+  withFixtures,
+  unlockWallet,
+  WINDOW_TITLES,
+} = require('../helpers');
 const FixtureBuilder = require('../fixture-builder');
 const { TEST_SNAPS_WEBSITE_URL } = require('./enums');
 
 describe('Test Snap Get File', function () {
   it('test snap_getFile functionality', async function () {
-    const ganacheOptions = {
-      accounts: [
-        {
-          secretKey:
-            '0x7C9529A67102755B7E6102D6D950AC5D5863C98713805CEC576B945B15B71EAC',
-          balance: 25000000000000000000,
-        },
-      ],
-    };
     await withFixtures(
       {
         fixtures: new FixtureBuilder().build(),
-        ganacheOptions,
-        failOnConsoleError: false,
+        ganacheOptions: defaultGanacheOptions,
         title: this.test.title,
       },
       async ({ driver }) => {
         await unlockWallet(driver);
 
-        // navigate to test snaps page and connect to dialog snap
+        // navigate to test snaps page and connect to get-file snap
         await driver.openNewPage(TEST_SNAPS_WEBSITE_URL);
-        await driver.delay(1000);
-        const dialogButton = await driver.findElement('#connectgetfile');
-        await driver.scrollToElement(dialogButton);
-        await driver.delay(1000);
-        await driver.clickElement('#connectgetfile');
-        await driver.delay(1000);
 
-        // switch to metamask extension and click connect
-        const windowHandles = await driver.waitUntilXWindowHandles(
-          3,
-          1000,
-          10000,
-        );
-        await driver.switchToWindowWithTitle(
-          WINDOW_TITLES.Dialog,
-          windowHandles,
-        );
+        // wait for page to load
+        await driver.waitForSelector({
+          text: 'Installed Snaps',
+          tag: 'h2',
+        });
+
+        // scroll to and wait for connect to get file button
+        const snapButton = await driver.findElement('#connectgetfile');
+        await driver.scrollToElement(snapButton);
+
+        // added delay for firefox (deflake)
+        await driver.delayFirefox(1000);
+
+        // wait for and click connect
+        await driver.waitForSelector('#connectgetfile');
+        await driver.clickElement('#connectgetfile');
+
+        // switch to metamask extension
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.Dialog);
+
+        // wait for and click connect
+        await driver.waitForSelector({
+          text: 'Connect',
+          tag: 'button',
+        });
         await driver.clickElement({
           text: 'Connect',
           tag: 'button',
         });
 
-        await driver.waitForSelector({ text: 'Install' });
-
+        // wait for and click confirm
+        await driver.waitForSelector({ text: 'Confirm' });
         await driver.clickElement({
-          text: 'Install',
+          text: 'Confirm',
           tag: 'button',
         });
 
+        // wait for and click ok and wait for window to close
         await driver.waitForSelector({ text: 'OK' });
-
-        await driver.clickElement({
+        await driver.clickElementAndWaitForWindowToClose({
           text: 'OK',
           tag: 'button',
         });
 
         // switch to test snaps tab
-        await driver.switchToWindowWithTitle('Test Snaps', windowHandles);
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.TestSnaps);
 
         // wait for npm installation success
         await driver.waitForSelector({
@@ -73,10 +77,7 @@ describe('Test Snap Get File', function () {
         // click on get text
         await driver.clickElement('#sendGetFileTextButton');
 
-        // short delay
-        await driver.delay(500);
-
-        // assert that the get text result is correct
+        // check that the get text result is correct
         await driver.waitForSelector({
           css: '#getFileResult',
           text: '"foo": "bar"',

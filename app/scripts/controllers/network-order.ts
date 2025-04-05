@@ -1,25 +1,28 @@
 import {
-  BaseControllerV2,
+  BaseController,
   RestrictedControllerMessenger,
 } from '@metamask/base-controller';
 import {
   NetworkControllerStateChangeEvent,
   NetworkState,
 } from '@metamask/network-controller';
+import { Hex } from '@metamask/utils';
 import type { Patch } from 'immer';
-import { MAINNET_CHAINS } from '../../../shared/constants/network';
+import { TEST_CHAINS } from '../../../shared/constants/network';
 
 // Unique name for the controller
 const controllerName = 'NetworkOrderController';
 
 /**
- * The network ID of a network.
+ * Information about an ordered network.
  */
-export type NetworkId = string;
+export type NetworksInfo = {
+  networkId: Hex; // The network's chain id
+};
 
 // State shape for NetworkOrderController
 export type NetworkOrderControllerState = {
-  orderedNetworkList: NetworkId[];
+  orderedNetworkList: NetworksInfo[];
 };
 
 // Describes the structure of a state change event
@@ -48,7 +51,7 @@ export type NetworkOrderControllerMessenger = RestrictedControllerMessenger<
 >;
 
 // Default state for the controller
-const defaultState = {
+const defaultState: NetworkOrderControllerState = {
   orderedNetworkList: [],
 };
 
@@ -65,7 +68,7 @@ const metadata = {
  * This controller subscribes to network state changes and ensures
  * that the network list is updated based on the latest network configurations.
  */
-export class NetworkOrderController extends BaseControllerV2<
+export class NetworkOrderController extends BaseController<
   typeof controllerName,
   NetworkOrderControllerState,
   NetworkOrderControllerMessenger
@@ -105,28 +108,32 @@ export class NetworkOrderController extends BaseControllerV2<
    * Handles the state change of the network controller and updates the networks list.
    *
    * @param networkControllerState - The state of the network controller.
+   * @param networkControllerState.networkConfigurationsByChainId
    */
-  onNetworkControllerStateChange(networkControllerState: NetworkState) {
-    // Extract network configurations from the state
-    const networkConfigurations = Object.values(
-      networkControllerState.networkConfigurations,
-    );
-
-    // Since networkConfigurations doesn't have default or mainnet network configurations we need to combine mainnet chains with network configurations
-    const combinedNetworks = [...MAINNET_CHAINS, ...networkConfigurations];
-
-    // Extract unique chainIds from the combined networks
-    const uniqueChainIds = combinedNetworks.map((item) => item.chainId);
-
-    // Update the state with the new networks list
+  onNetworkControllerStateChange({
+    networkConfigurationsByChainId,
+  }: NetworkState) {
     this.update((state) => {
-      // Combine existing networks with unique chainIds, excluding duplicates
-      state.orderedNetworkList = [
-        ...state.orderedNetworkList,
-        ...uniqueChainIds.filter(
-          (id) => !state.orderedNetworkList.includes(id),
-        ),
-      ];
+      // Filter out testnets, which are in the state but not orderable
+      const chainIds = Object.keys(networkConfigurationsByChainId).filter(
+        (chainId) =>
+          !TEST_CHAINS.includes(chainId as (typeof TEST_CHAINS)[number]),
+      ) as Hex[];
+
+      const newNetworks = chainIds
+        .filter(
+          (chainId) =>
+            !state.orderedNetworkList.some(
+              ({ networkId }) => networkId === chainId,
+            ),
+        )
+        .map((chainId) => ({ networkId: chainId }));
+
+      state.orderedNetworkList = state.orderedNetworkList
+        // Filter out deleted networks
+        .filter(({ networkId }) => chainIds.includes(networkId))
+        // Append new networks to the end
+        .concat(newNetworks);
     });
   }
 
@@ -136,10 +143,11 @@ export class NetworkOrderController extends BaseControllerV2<
    * @param networkList - The list of networks to update in the state.
    */
 
-  updateNetworksList(networkList: []) {
+  updateNetworksList(chainIds: Hex[]) {
     this.update((state) => {
-      state.orderedNetworkList = networkList;
-      return state;
+      state.orderedNetworkList = chainIds.map((chainId) => ({
+        networkId: chainId,
+      }));
     });
   }
 }

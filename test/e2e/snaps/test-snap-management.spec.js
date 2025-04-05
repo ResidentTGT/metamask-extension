@@ -1,23 +1,18 @@
-const { withFixtures, unlockWallet, WINDOW_TITLES } = require('../helpers');
+const {
+  defaultGanacheOptions,
+  withFixtures,
+  unlockWallet,
+  WINDOW_TITLES,
+} = require('../helpers');
 const FixtureBuilder = require('../fixture-builder');
 const { TEST_SNAPS_WEBSITE_URL } = require('./enums');
 
 describe('Test Snap Management', function () {
   it('tests install disable enable and removal of a snap', async function () {
-    const ganacheOptions = {
-      accounts: [
-        {
-          secretKey:
-            '0x7C9529A67102755B7E6102D6D950AC5D5863C98713805CEC576B945B15B71EAC',
-          balance: 25000000000000000000,
-        },
-      ],
-    };
     await withFixtures(
       {
         fixtures: new FixtureBuilder().build(),
-        ganacheOptions,
-        failOnConsoleError: false,
+        ganacheOptions: defaultGanacheOptions,
         title: this.test.fullTitle(),
       },
       async ({ driver }) => {
@@ -25,50 +20,60 @@ describe('Test Snap Management', function () {
 
         // open a new tab and navigate to test snaps page and connect
         await driver.openNewPage(TEST_SNAPS_WEBSITE_URL);
-        await driver.delay(1000);
 
-        // find and scroll to the correct card and click first
+        // wait for page to load
+        await driver.waitForSelector({
+          text: 'Installed Snaps',
+          tag: 'h2',
+        });
+
+        // find and scroll to the notifications snap
         const snapButton = await driver.findElement('#connectnotifications');
         await driver.scrollToElement(snapButton);
-        await driver.delay(1000);
-        await driver.clickElement('#connectnotifications');
-        await driver.delay(1000);
 
-        // switch to metamask extension and click connect
-        let windowHandles = await driver.waitUntilXWindowHandles(
-          3,
-          1000,
-          10000,
-        );
-        await driver.switchToWindowWithTitle(
-          WINDOW_TITLES.Dialog,
-          windowHandles,
-        );
+        // added delay for firefox (deflake)
+        await driver.delayFirefox(1000);
+
+        // wait for and click connect
+        await driver.waitForSelector('#connectnotifications');
+        await driver.clickElement('#connectnotifications');
+
+        // switch to metamask extension
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.Dialog);
+
+        // wait for and click connect
+        await driver.waitForSelector({
+          text: 'Connect',
+          tag: 'button',
+        });
         await driver.clickElement({
           text: 'Connect',
           tag: 'button',
         });
 
-        await driver.waitForSelector({ text: 'Install' });
-
+        // wait for and click confirm
+        await driver.waitForSelector({ text: 'Confirm' });
         await driver.clickElement({
-          text: 'Install',
+          text: 'Confirm',
           tag: 'button',
         });
 
+        // wait for and click ok and wait for window to close
         await driver.waitForSelector({ text: 'OK' });
-
-        await driver.clickElement({
+        await driver.clickElementAndWaitForWindowToClose({
           text: 'OK',
           tag: 'button',
         });
 
         // switch to the original MM tab
-        const extensionPage = windowHandles[0];
-        await driver.switchToWindow(extensionPage);
-        await driver.delay(1000);
+        await driver.switchToWindowWithTitle(
+          WINDOW_TITLES.ExtensionInFullScreenView,
+        );
 
         // click on the global action menu
+        await driver.waitForSelector(
+          '[data-testid="account-options-menu-button"]',
+        );
         await driver.clickElement(
           '[data-testid="account-options-menu-button"]',
         );
@@ -78,9 +83,12 @@ describe('Test Snap Management', function () {
           text: 'Snaps',
           tag: 'div',
         });
-        await driver.delay(1000);
 
         // try to disable the snap
+        await driver.waitForSelector({
+          text: 'Notifications Example Snap',
+          tag: 'p',
+        });
         await driver.clickElement({
           text: 'Notifications Example Snap',
           tag: 'p',
@@ -88,36 +96,45 @@ describe('Test Snap Management', function () {
         await driver.clickElement('.toggle-button > div');
 
         // switch back to test-snaps window
-        windowHandles = await driver.waitUntilXWindowHandles(2, 1000, 10000);
-        await driver.switchToWindowWithTitle('Test Snaps', windowHandles);
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.TestSnaps);
 
         // wait then try the notification test
-        await driver.delay(1000);
+        await driver.waitForSelector('#sendInAppNotification');
         await driver.clickElement('#sendInAppNotification');
 
         // click OK on the popup
         await driver.delay(1000);
         await driver.closeAlertPopup();
-        await driver.delay(1000);
 
         // switch back to snaps page
-        await driver.switchToWindow(extensionPage);
-        await driver.delay(1000);
+        await driver.switchToWindowWithTitle(
+          WINDOW_TITLES.ExtensionInFullScreenView,
+        );
 
         // try to re-enaable the snap
+        await driver.waitForSelector('.toggle-button > div');
         await driver.clickElement('.toggle-button > div');
-        await driver.delay(1000);
 
         // switch back to test snaps page
-        await driver.switchToWindowWithTitle('Test Snaps', windowHandles);
+        await driver.switchToWindowWithTitle(WINDOW_TITLES.TestSnaps);
 
         // wait then try the notification test
-        await driver.delay(1000);
+        await driver.waitForSelector('#sendInAppNotification');
         await driver.clickElement('#sendInAppNotification');
 
         // check to see that there is one notification
-        await driver.switchToWindow(extensionPage);
-        await driver.delay(1000);
+        await driver.switchToWindowWithTitle(
+          WINDOW_TITLES.ExtensionInFullScreenView,
+        );
+
+        // click the back arrow to return to the main extension page
+        await driver.waitForSelector('[aria-label="Back"]');
+        await driver.clickElement('[aria-label="Back"]');
+
+        // click account options menu button
+        await driver.waitForSelector(
+          '[data-testid="account-options-menu-button"]',
+        );
         await driver.clickElement(
           '[data-testid="account-options-menu-button"]',
         );
@@ -125,21 +142,34 @@ describe('Test Snap Management', function () {
           css: '[data-testid="global-menu-notification-count"]',
           text: '1',
         });
-        await driver.clickElement('.menu__background');
+
+        // this click will close the menu
+        await driver.clickElement(
+          '[data-testid="account-options-menu-button"]',
+        );
+
+        // go into the notifications snap page
+        await driver.waitForSelector({
+          text: 'Notifications Example Snap',
+          tag: 'p',
+        });
+        await driver.clickElement({
+          text: 'Notifications Example Snap',
+          tag: 'p',
+        });
 
         // try to remove snap
         await driver.clickElement({
           text: 'Remove Notifications Example Snap',
           tag: 'p',
         });
-        await driver.delay(1000);
 
         // try to click remove on popover
+        await driver.waitForSelector('#popoverRemoveSnapButton');
         await driver.clickElement('#popoverRemoveSnapButton');
-        await driver.delay(1000);
 
         // check the results of the removal
-        await driver.findElement({
+        await driver.waitForSelector({
           css: '.mm-box',
           text: "You don't have any snaps installed.",
           tag: 'p',

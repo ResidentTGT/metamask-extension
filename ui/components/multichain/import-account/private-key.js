@@ -7,7 +7,9 @@ import {
   TextFieldSize,
   TextFieldType,
 } from '../../component-library';
+
 import { useI18nContext } from '../../../hooks/useI18nContext';
+import ShowHideToggle from '../../ui/show-hide-toggle';
 import BottomButtons from './bottom-buttons';
 
 export default function PrivateKeyImportView({
@@ -16,6 +18,7 @@ export default function PrivateKeyImportView({
 }) {
   const t = useI18nContext();
   const [privateKey, setPrivateKey] = useState('');
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
 
   const warning = useSelector((state) => state.appState.warning);
 
@@ -36,7 +39,6 @@ export default function PrivateKeyImportView({
         id="private-key-box"
         size={TextFieldSize.Lg}
         autoFocus
-        type={TextFieldType.Password}
         helpText={warning}
         error
         label={t('pastePrivateKey')}
@@ -46,6 +48,19 @@ export default function PrivateKeyImportView({
           onKeyPress: handleKeyPress,
         }}
         marginBottom={4}
+        type={showPrivateKey ? TextFieldType.Text : TextFieldType.Password}
+        textFieldProps={{
+          endAccessory: (
+            <ShowHideToggle
+              shown={showPrivateKey}
+              id="show-hide-private-key"
+              title={t('privateKeyShow')}
+              ariaLabelShown={t('privateKeyShown')}
+              ariaLabelHidden={t('privateKeyHidden')}
+              onChange={() => setShowPrivateKey(!showPrivateKey)}
+            />
+          ),
+        }}
       />
 
       <BottomButtons

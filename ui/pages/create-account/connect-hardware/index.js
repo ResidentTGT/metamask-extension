@@ -28,10 +28,16 @@ import {
 } from '../../../components/component-library';
 import ZENDESK_URLS from '../../../helpers/constants/zendesk-url';
 import { TextColor } from '../../../helpers/constants/design-system';
-import SelectHardware from './select-hardware';
 import AccountList from './account-list';
+import SelectHardware from './select-hardware';
 
 const U2F_ERROR = 'U2F';
+const LEDGER_ERRORS_CODES = {
+  '0x650f': 'ledgerErrorConnectionIssue',
+  '0x5515': 'ledgerErrorDevicedLocked',
+  '0x6501': 'ledgerErrorEthAppNotOpen',
+  '0x6a80': 'ledgerErrorTransactionDataNotPadded',
+};
 
 const LEDGER_LIVE_PATH = `m/44'/60'/0'/0/0`;
 const MEW_PATH = `m/44'/60'/0'`;
@@ -68,6 +74,21 @@ const HD_PATHS = {
   ledger: LEDGER_HD_PATHS,
   lattice: LATTICE_HD_PATHS,
   trezor: TREZOR_HD_PATHS,
+};
+
+const getErrorMessage = (errorCode, t) => {
+  switch (errorCode) {
+    case '0x650f':
+      return t('ledgerErrorConnectionIssue');
+    case '0x5515':
+      return t('ledgerErrorDevicedLocked');
+    case '0x6501':
+      return t('ledgerErrorEthAppNotOpen');
+    case '0x6a80':
+      return t('ledgerErrorTransactionDataNotPadded');
+    default:
+      return errorCode;
+  }
 };
 
 class ConnectHardwareForm extends Component {
@@ -112,7 +133,7 @@ class ConnectHardwareForm extends Component {
     ]) {
       const path = this.props.defaultHdPaths[device];
       const unlocked = await this.props.checkHardwareStatus(device, path);
-      if (unlocked) {
+      if (unlocked && this.state.device) {
         this.setState({ unlocked: true });
         this.getPage(device, 0, path);
       }
@@ -194,6 +215,9 @@ class ConnectHardwareForm extends Component {
       })
       .catch((e) => {
         const errorMessage = typeof e === 'string' ? e : e.message;
+        const ledgerErrorCode = Object.keys(LEDGER_ERRORS_CODES).find(
+          (errorCode) => errorMessage.includes(errorCode),
+        );
         if (errorMessage === 'Window blocked') {
           this.setState({ browserSupported: false, error: null });
         } else if (errorMessage.includes(U2F_ERROR)) {
@@ -208,6 +232,10 @@ class ConnectHardwareForm extends Component {
         } else if (errorMessage.includes('timeout')) {
           this.setState({
             error: this.context.t('ledgerTimeout'),
+          });
+        } else if (ledgerErrorCode) {
+          this.setState({
+            error: `${errorMessage} - ${getErrorMessage(ledgerErrorCode)}`,
           });
         } else if (
           errorMessage
@@ -249,7 +277,7 @@ class ConnectHardwareForm extends Component {
       });
   };
 
-  onUnlockAccounts = (device, path) => {
+  onUnlockAccounts = async (device, path) => {
     const { history, mostRecentOverviewPage, unlockHardwareWalletAccounts } =
       this.props;
     const { selectedAccounts } = this.state;
@@ -262,6 +290,13 @@ class ConnectHardwareForm extends Component {
       MEW_PATH === path
         ? this.context.t('hardwareWalletLegacyDescription')
         : '';
+
+    // Get preferred device name for metrics.
+    const metricDeviceName = await this.props.getDeviceNameForMetric(
+      device,
+      path,
+    );
+
     return unlockHardwareWalletAccounts(
       selectedAccounts,
       device,
@@ -274,7 +309,7 @@ class ConnectHardwareForm extends Component {
           event: MetaMetricsEventName.AccountAdded,
           properties: {
             account_type: MetaMetricsEventAccountType.Hardware,
-            account_hardware_type: device,
+            account_hardware_type: metricDeviceName,
           },
         });
         history.push(mostRecentOverviewPage);
@@ -285,7 +320,7 @@ class ConnectHardwareForm extends Component {
           event: MetaMetricsEventName.AccountAddFailed,
           properties: {
             account_type: MetaMetricsEventAccountType.Hardware,
-            account_hardware_type: device,
+            account_hardware_type: metricDeviceName,
             error: e.message,
           },
         });
@@ -411,6 +446,7 @@ class ConnectHardwareForm extends Component {
 ConnectHardwareForm.propTypes = {
   connectHardware: PropTypes.func,
   checkHardwareStatus: PropTypes.func,
+  getDeviceNameForMetric: PropTypes.func,
   forgetDevice: PropTypes.func,
   showAlert: PropTypes.func,
   hideAlert: PropTypes.func,
@@ -443,6 +479,9 @@ const mapDispatchToProps = (dispatch) => {
     },
     connectHardware: (deviceName, page, hdPath, t) => {
       return dispatch(actions.connectHardware(deviceName, page, hdPath, t));
+    },
+    getDeviceNameForMetric: (deviceName, hdPath) => {
+      return dispatch(actions.getDeviceNameForMetric(deviceName, hdPath));
     },
     checkHardwareStatus: (deviceName, hdPath) => {
       return dispatch(actions.checkHardwareStatus(deviceName, hdPath));

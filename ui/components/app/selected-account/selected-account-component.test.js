@@ -1,7 +1,7 @@
 import React from 'react';
 import configureMockStore from 'redux-mock-store';
 import copyToClipboard from 'copy-to-clipboard';
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProvider } from '../../../../test/lib/render-helpers';
 import mockState from '../../../../test/data/mock-state.json';
 import { COPY_OPTIONS } from '../../../../shared/constants/copy';
@@ -12,9 +12,24 @@ import {
 import { getAccountType } from '../../../selectors';
 import SelectedAccount from '.';
 
-const mockSelectedIdentity = {
+const mockSelectedAccount = {
   address: '0x0DCD5D886577d5081B0c52e242Ef29E70Be3E7bc',
-  name: 'Test Account',
+  id: 'cf8dace4-9439-4bd4-b3a8-88c821c8fcb3',
+  metadata: {
+    name: 'Test Account',
+    keyring: {
+      type: 'HD Key Tree',
+    },
+  },
+  options: {},
+  methods: [
+    'personal_sign',
+    'eth_signTransaction',
+    'eth_signTypedData_v1',
+    'eth_signTypedData_v3',
+    'eth_signTypedData_v4',
+  ],
+  type: 'eip155:eoa',
 };
 
 jest.mock('copy-to-clipboard');
@@ -31,29 +46,42 @@ jest.mock('../../../selectors/institutional/selectors', () => {
 
 jest.mock('../../../selectors', () => {
   const mockGetAccountType = jest.fn(() => undefined);
-  const mockGetSelectedIdentity = jest.fn(() => mockSelectedIdentity);
+  const mockGetSelectedAccount = jest.fn(() => mockSelectedAccount);
 
   return {
     getAccountType: mockGetAccountType,
-    getSelectedIdentity: mockGetSelectedIdentity,
+    getSelectedInternalAccount: mockGetSelectedAccount,
+    getCurrentChainId: jest.fn(() => '0x5'),
+    getSelectedNetworkClientId: jest.fn(() => 'goerli'),
+    getNetworkConfigurationsByChainId: jest.fn(() => ({
+      '0x5': {
+        chainId: '0x5',
+        rpcEndpoints: [{ networkClientId: 'goerli' }],
+      },
+    })),
   };
 });
 
 describe('SelectedAccount Component', () => {
   const mockStore = configureMockStore()(mockState);
 
-  it('should render correctly', () => {
+  it('should match snapshot', () => {
+    const { container } = renderWithProvider(<SelectedAccount />, mockStore);
+    expect(container).toMatchSnapshot();
+  });
+
+  it('should render correctly', async () => {
     const { container, getByText, getByTestId } = renderWithProvider(
       <SelectedAccount />,
       mockStore,
     );
 
-    const tooltipTitle = container.querySelector(
-      '[data-original-title="Copy to clipboard"]',
+    const tooltipTitle = await waitFor(() =>
+      container.querySelector('[data-original-title="Copy to clipboard"]'),
     );
 
     expect(tooltipTitle).toBeInTheDocument();
-    expect(getByText(mockSelectedIdentity.name)).toBeInTheDocument();
+    expect(getByText(mockSelectedAccount.metadata.name)).toBeInTheDocument();
     expect(getByTestId('selected-account-copy')).toBeInTheDocument();
   });
 
@@ -73,7 +101,7 @@ describe('SelectedAccount Component', () => {
     );
   });
 
-  it('should render correctly if isCustodianSupportedChain to false', () => {
+  it('should render correctly if isCustodianSupportedChain to false', async () => {
     getIsCustodianSupportedChain.mockReturnValue(false);
 
     const { container, queryByTestId } = renderWithProvider(
@@ -81,8 +109,10 @@ describe('SelectedAccount Component', () => {
       mockStore,
     );
 
-    const tooltipTitle = container.querySelector(
-      '[data-original-title="This account is not set up for use with goerli"]',
+    const tooltipTitle = await waitFor(() =>
+      container.querySelector(
+        '[data-original-title="This account is not set up for use with Goerli"]',
+      ),
     );
 
     const button = queryByTestId('selected-account-click');
@@ -94,7 +124,7 @@ describe('SelectedAccount Component', () => {
 
   it('should display custody labels if they exist', () => {
     const mockAccountDetails = {
-      [mockSelectedIdentity.address]: {
+      [mockSelectedAccount.address]: {
         labels: [
           { key: 'Label 1', value: 'Label 1' },
           { key: 'Label 2', value: 'Label 2' },

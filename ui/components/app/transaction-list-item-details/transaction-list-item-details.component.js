@@ -12,8 +12,9 @@ import Button from '../../ui/button';
 import Tooltip from '../../ui/tooltip';
 import CancelButton from '../cancel-button';
 import Popover from '../../ui/popover';
+import { Box } from '../../component-library/box';
 ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
-import { Box, Icon, IconName, Text } from '../../component-library';
+import { Icon, IconName, Text } from '../../component-library';
 import { IconColor } from '../../../helpers/constants/design-system';
 ///: END:ONLY_INCLUDE_IF
 import { SECOND } from '../../../../shared/constants/time';
@@ -58,7 +59,7 @@ export default class TransactionListItemDetails extends PureComponent {
     blockExplorerLinkText: PropTypes.object,
     ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
     getCustodianTransactionDeepLink: PropTypes.func,
-    selectedIdentity: PropTypes.object,
+    selectedAccount: PropTypes.object,
     transactionNote: PropTypes.string,
     ///: END:ONLY_INCLUDE_IF
   };
@@ -140,14 +141,14 @@ export default class TransactionListItemDetails extends PureComponent {
       recipientAddress,
       tryReverseResolveAddress,
       ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
-      selectedIdentity,
+      selectedAccount,
       transactionGroup,
       ///: END:ONLY_INCLUDE_IF
     } = this.props;
 
     ///: BEGIN:ONLY_INCLUDE_IF(build-mmi)
     this._mounted = true;
-    const address = selectedIdentity?.address;
+    const address = selectedAccount?.address;
     const custodyId = transactionGroup?.primaryTransaction?.custodyId;
 
     if (this._mounted && address && custodyId) {
@@ -213,7 +214,7 @@ export default class TransactionListItemDetails extends PureComponent {
       primaryTransaction: transaction,
       initialTransaction: { type },
     } = transactionGroup;
-    const { hash } = transaction;
+    const { chainId, hash } = transaction;
 
     return (
       <Popover title={title} onClose={onClose}>
@@ -331,6 +332,7 @@ export default class TransactionListItemDetails extends PureComponent {
                 recipientMetadataName={recipientMetadataName}
                 senderName={senderNickname}
                 senderAddress={senderAddress}
+                chainId={chainId}
                 onRecipientClick={() => {
                   this.context.trackEvent({
                     category: MetaMetricsEventCategory.Navigation,
@@ -380,15 +382,21 @@ export default class TransactionListItemDetails extends PureComponent {
               }
               {transactionGroup.initialTransaction.type !==
                 TransactionType.incoming && (
-                <Disclosure title={t('activityLog')} size="small">
-                  <TransactionActivityLog
-                    transactionGroup={transactionGroup}
-                    className="transaction-list-item-details__transaction-activity-log"
-                    onCancel={this.handleCancel}
-                    onRetry={this.handleRetry}
-                    isEarliestNonce={isEarliestNonce}
-                  />
-                </Disclosure>
+                <Box marginTop={3} marginBottom={3}>
+                  <Disclosure
+                    title={t('activityLog')}
+                    size="small"
+                    isScrollToBottomOnOpen
+                  >
+                    <TransactionActivityLog
+                      transactionGroup={transactionGroup}
+                      className="transaction-list-item-details__transaction-activity-log"
+                      onCancel={this.handleCancel}
+                      onRetry={this.handleRetry}
+                      isEarliestNonce={isEarliestNonce}
+                    />
+                  </Disclosure>
+                </Box>
               )}
             </div>
           </div>

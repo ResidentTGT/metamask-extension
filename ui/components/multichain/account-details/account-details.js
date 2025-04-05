@@ -15,7 +15,11 @@ import {
   TextVariant,
 } from '../../../helpers/constants/design-system';
 import { useI18nContext } from '../../../hooks/useI18nContext';
-import { getMetaMaskAccountsOrdered, getUseBlockie } from '../../../selectors';
+import {
+  getInternalAccountByAddress,
+  getMetaMaskAccountsOrdered,
+  getUseBlockie,
+} from '../../../selectors';
 import {
   clearAccountDetails,
   hideWarning,
@@ -28,10 +32,11 @@ import {
   AvatarAccountVariant,
   Box,
   Modal,
-  ModalContent,
-  ModalHeader,
   ModalOverlay,
   Text,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
 } from '../../component-library';
 import { AddressCopyButton } from '../address-copy-button';
 import { AccountDetailsAuthenticate } from './account-details-authenticate';
@@ -44,7 +49,9 @@ export const AccountDetails = ({ address }) => {
   const trackEvent = useContext(MetaMetricsContext);
   const useBlockie = useSelector(getUseBlockie);
   const accounts = useSelector(getMetaMaskAccountsOrdered);
-  const { name } = accounts.find((account) => account.address === address);
+  const {
+    metadata: { name },
+  } = useSelector((state) => getInternalAccountByAddress(state, address));
   const [showHoldToReveal, setShowHoldToReveal] = useState(false);
   const [attemptingExport, setAttemptingExport] = useState(false);
 
@@ -73,7 +80,11 @@ export const AccountDetails = ({ address }) => {
   return (
     <>
       {/* This is the Modal that says "Show private key" on top and has a few states */}
-      <Modal isOpen={!showHoldToReveal} onClose={onClose}>
+      <Modal
+        isOpen={!showHoldToReveal}
+        onClose={onClose}
+        data-testid="account-details-modal"
+      >
         <ModalOverlay />
         {/* <ModalContent>
           <ModalHeader
@@ -82,25 +93,20 @@ export const AccountDetails = ({ address }) => {
               attemptingExport &&
               (() => {
                 dispatch(hideWarning());
+                setPrivateKey('');
                 setAttemptingExport(false);
               })
             }
           >
             {attemptingExport ? t('showPrivateKey') : avatar}
           </ModalHeader>
-          {attemptingExport ? (
-            <>
-              <Box
-                display={Display.Flex}
-                alignItems={AlignItems.center}
-                flexDirection={FlexDirection.Column}
-              >
-                {avatar}
-                <Text
-                  marginTop={2}
-                  marginBottom={2}
-                  variant={TextVariant.bodyLgMedium}
-                  style={{ wordBreak: 'break-word' }}
+          <ModalBody>
+            {attemptingExport ? (
+              <>
+                <Box
+                  display={Display.Flex}
+                  alignItems={AlignItems.center}
+                  flexDirection={FlexDirection.Column}
                 >
                   {name}
                 </Text>

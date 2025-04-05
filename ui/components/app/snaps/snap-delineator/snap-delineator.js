@@ -38,6 +38,7 @@ export const SnapDelineator = ({
   children,
   onClick,
   boxProps,
+  disablePadding = false,
 }) => {
   const t = useI18nContext();
   const isError =
@@ -65,9 +66,14 @@ export const SnapDelineator = ({
         padding={1}
         style={{ borderBottomWidth: isCollapsed ? 0 : 1 }}
       >
-        <Box display={Display.Flex} alignItems={AlignItems.center}>
+        <Box
+          display={Display.Flex}
+          alignItems={AlignItems.center}
+          className="snap-delineator__header__container"
+        >
           <AvatarIcon
             iconName={IconName.Snaps}
+            className="snap-delineator__header__icon"
             size={AvatarIconSize.Xs}
             backgroundColor={
               isError ? IconColor.errorDefault : IconColor.infoDefault
@@ -78,11 +84,13 @@ export const SnapDelineator = ({
           />
           <Text
             variant={TextVariant.bodySm}
-            color={isError ? TextColor.textDefault : TextColor.textAlternative}
+            color={TextColor.textDefault}
             className="snap-delineator__header__text"
             marginLeft={1}
             marginTop={0}
             marginBottom={0}
+            marginRight={1}
+            display="block"
           >
             {t(getDelineatorTitle(type), [snapName])}
           </Text>
@@ -97,9 +105,10 @@ export const SnapDelineator = ({
           />
         )}
       </Box>
+
       <Box
         className="snap-delineator__content"
-        padding={4}
+        padding={!disablePadding || isLoading ? 4 : 0}
         display={isCollapsable && isCollapsed ? Display.None : Display.Flex}
         flexDirection={FlexDirection.Column}
         alignItems={isLoading && AlignItems.center}
@@ -121,4 +130,5 @@ SnapDelineator.propTypes = {
   onClick: PropTypes.func,
   boxProps: PropTypes.object,
   children: PropTypes.node,
+  disablePadding: PropTypes.bool,
 };

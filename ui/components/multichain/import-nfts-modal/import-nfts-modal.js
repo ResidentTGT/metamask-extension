@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import React, { useContext, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
+import { getErrorMessage } from '../../../../shared/modules/error';
 import {
   MetaMetricsEventName,
   MetaMetricsTokenEventSource,
@@ -24,8 +25,8 @@ import { useI18nContext } from '../../../hooks/useI18nContext';
 import {
   getCurrentChainId,
   getIsMainnet,
+  getSelectedInternalAccount,
   getOpenSeaEnabled,
-  getSelectedAddress,
 } from '../../../selectors';
 import {
   addNftVerifyOwnership,
@@ -34,23 +35,23 @@ import {
   setNewNftAddedMessage,
   updateNftDropDownState,
 } from '../../../store/actions';
-import NftsDetectionNoticeImportNFTs from '../../app/nfts-detection-notice-import-nfts/nfts-detection-notice-import-nfts';
+import NftsDetectionNoticeImportNFTs from '../../app/assets/nfts/nfts-detection-notice-import-nfts/nfts-detection-notice-import-nfts';
 import {
   BannerAlert,
   Box,
   ButtonPrimary,
   ButtonSecondary,
   ButtonSecondarySize,
-  FormTextField,
   Icon,
   IconName,
   IconSize,
   Label,
   Modal,
-  ModalContent,
-  ModalHeader,
   ModalOverlay,
 } from '../../component-library';
+import { FormTextField } from '../../component-library/form-text-field/deprecated';
+import { ModalContent } from '../../component-library/modal-content/deprecated';
+import { ModalHeader } from '../../component-library/modal-header/deprecated';
 import Tooltip from '../../ui/tooltip';
 import { useNftsCollections } from '../../../hooks/useNftsCollections';
 import { checkTokenIdExists } from '../../../helpers/utils/util';
@@ -62,7 +63,7 @@ export const ImportNftsModal = ({ onClose }) => {
   const isDisplayNFTMediaToggleEnabled = useSelector(getOpenSeaEnabled);
   const isMainnet = useSelector(getIsMainnet);
   const nftsDropdownState = useSelector(getNftsDropdownState);
-  const selectedAddress = useSelector(getSelectedAddress);
+  const selectedAccount = useSelector(getSelectedInternalAccount);
   const chainId = useSelector(getCurrentChainId);
   const {
     tokenAddress: initialTokenAddress,
@@ -84,10 +85,10 @@ export const ImportNftsModal = ({ onClose }) => {
       await dispatch(addNftVerifyOwnership(nftAddress, tokenId));
       const newNftDropdownState = {
         ...nftsDropdownState,
-        [selectedAddress]: {
-          ...nftsDropdownState?.[selectedAddress],
+        [selectedAccount.address]: {
+          ...nftsDropdownState?.[selectedAccount.address],
           [chainId]: {
-            ...nftsDropdownState?.[selectedAddress]?.[chainId],
+            ...nftsDropdownState?.[selectedAccount.address]?.[chainId],
             [nftAddress]: true,
           },
         },
@@ -95,7 +96,7 @@ export const ImportNftsModal = ({ onClose }) => {
 
       dispatch(updateNftDropDownState(newNftDropdownState));
     } catch (error) {
-      const { message } = error;
+      const message = getErrorMessage(error);
       dispatch(setNewNftAddedMessage(message));
       setNftAddFailed(true);
       return;
@@ -114,7 +115,7 @@ export const ImportNftsModal = ({ onClose }) => {
       nftAddress,
       null,
       tokenId.toString(),
-    );
+    ).catch(() => ({}));
 
     trackEvent({
       event: MetaMetricsEventName.TokenAdded,
